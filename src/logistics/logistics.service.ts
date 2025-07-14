@@ -5,7 +5,10 @@ import { Logistics } from '../entity/logistics';
 
 @Injectable()
 export class LogisticsService {
-  constructor(@InjectRepository(Logistics) private readonly logisticsRepository: Repository<Logistics>) {}
+  constructor(
+    @InjectRepository(Logistics)
+    private readonly logisticsRepository: Repository<Logistics>,
+  ) {}
 
   async createLogistic(data: Partial<Logistics>): Promise<Logistics> {
     const logistics = this.logisticsRepository.create(data);
@@ -13,15 +16,15 @@ export class LogisticsService {
   }
 
   async updateLogistics(data: Partial<Logistics>): Promise<Logistics> {
-    this.logisticsRepository.update({ no: data.no }, { ...data })
+    this.logisticsRepository.update({ no: data.no }, { ...data });
     return this.logisticsRepository.save(data);
   }
 
-  async findAllLogistics(): Promise<Logistics[]> {
-    return this.logisticsRepository.find()
+  async findAll(): Promise<Logistics[]> {
+    return this.logisticsRepository.find();
   }
 
-  async findOneLogistic(no: string): Promise<Logistics | null> {
-    return this.logisticsRepository.findOne({ where: { no } })
+  async findOne(no: string): Promise<Logistics | null> {
+    return this.logisticsRepository.findOne({ where: { no } });
   }
 }
