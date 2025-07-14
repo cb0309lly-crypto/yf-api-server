@@ -8,6 +8,7 @@ import { ProductModule } from './product/product.module';
 import { SystemModule } from './system/system.module';
 import { ReceiverModule } from './receiver/receiver.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -19,11 +20,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       username: 'yf_root',
       password: 'Yf@123456',
       database: 'yf-db',
-      synchronize: true,
+      // synchronize: true,
       // logging: true,
       entities: [__dirname + '/entity/*{.ts,.js}'],
     }),
-    UserModule, OrderModule, LogisticsModule, ProductModule, SystemModule, ReceiverModule],
+    UserModule,
+    OrderModule,
+    LogisticsModule,
+    ProductModule,
+    SystemModule,
+    ReceiverModule,
+    CompanyModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

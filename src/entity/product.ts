@@ -5,7 +5,13 @@ import { Base } from './base';
 export class Product extends Base {
   @Column({ nullable: true })
   description: string;
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0.00 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0.0,
+  })
   price: number;
   @Column({ nullable: true })
   specs: string;
@@ -15,4 +21,6 @@ export class Product extends Base {
   tag: string;
   @Column({ name: 'company_no', nullable: true })
   companyNo: string;
+  @Column({ nullable: true, name: 'order_no' })
+  orderNo: string;
 }
