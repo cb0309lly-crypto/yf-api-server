@@ -1,10 +1,25 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Base } from './base';
+import { Category } from './category';
+import { Inventory } from './inventory';
+import { Cart } from './cart';
+import { OrderItem } from './order-item';
+import { Review } from './review';
+import { Wishlist } from './wishlist';
+
+export enum ProductStatus {
+  ACTIVE = '已上架',
+  INACTIVE = '已下架',
+  OUT_OF_STOCK = '缺货',
+  IN_STOCK = '有货',
+  SALED = '售罄'
+}
 
 @Entity('yf_db_product')
 export class Product extends Base {
   @Column({ nullable: true })
   description: string;
+  
   @Column({
     type: 'decimal',
     precision: 10,
@@ -13,14 +28,48 @@ export class Product extends Base {
     default: 0.0,
   })
   price: number;
+  
+  @Column({ nullable: true, name: 'image_url' })
+  imgUrl: string;
+  
+  @Column({ nullable: true, type: 'enum', enum: ProductStatus, default: ProductStatus.ACTIVE })
+  status: ProductStatus;
+  
   @Column({ nullable: true })
   specs: string;
+  
   @Column({ nullable: true })
   unit: string;
+  
   @Column({ nullable: true })
   tag: string;
+  
   @Column({ name: 'company_no', nullable: true })
   companyNo: string;
-  @Column({ nullable: true, name: 'order_no' })
+  
+  @Column({ name: 'category_no', nullable: true })
+  categoryNo: string;
+  
+  @Column({ name: 'order_no', nullable: true })
   orderNo: string;
+
+  // 关系映射
+  @ManyToOne(() => Category, category => category.products)
+  @JoinColumn({ name: 'category_no' })
+  category: Category;
+
+  @OneToMany(() => Inventory, inventory => inventory.product)
+  inventories: Inventory[];
+
+  @OneToMany(() => Cart, cart => cart.product)
+  cartItems: Cart[];
+
+  @OneToMany(() => OrderItem, orderItem => orderItem.product)
+  orderItems: OrderItem[];
+
+  @OneToMany(() => Review, review => review.product)
+  reviews: Review[];
+
+  @OneToMany(() => Wishlist, wishlist => wishlist.product)
+  wishlistItems: Wishlist[];
 }

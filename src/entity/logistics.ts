@@ -18,6 +18,6 @@ export class Logistics extends Base {
   orderNo: string;
   @Column({ type: 'enum', enum: LogisticsCurrentStatus, default: LogisticsCurrentStatus.ORDERED, name: 'current_status' })
   currentStatus: LogisticsCurrentStatus;
-  @Column({ type: 'timestamp', default: Date.now })
+  @Column({ type: 'timestamp', nullable: true })
   receive_time: Date;
 }
