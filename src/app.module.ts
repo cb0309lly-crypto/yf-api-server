@@ -21,6 +21,8 @@ import { CouponModule } from './coupon/coupon.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { NotificationModule } from './notification/notification.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './user/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -56,6 +58,11 @@ import { NotificationModule } from './notification/notification.module';
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}
