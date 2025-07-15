@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entity/product';
+import { paginate, PaginationResult } from '../common/utils/pagination.util';
 
 @Injectable()
 export class ProductService {
@@ -11,20 +12,57 @@ export class ProductService {
   ) {}
 
   async addProduct(data: Partial<Product>): Promise<Product> {
-    const product = this.productRepository.create(data);
-    return this.productRepository.save(product);
+    try {
+      const product = this.productRepository.create(data);
+      return await this.productRepository.save(product);
+    } catch (err) {
+      throw new BadRequestException('新增商品失败: ' + err.message);
+    }
   }
 
   async updateProduct(data: Partial<Product>): Promise<Product> {
-    this.productRepository.update({ no: data.no }, { ...data });
-    return this.productRepository.save(data);
+    if (!data.no) {
+      throw new BadRequestException('缺少商品主键no');
+    }
+    const product = await this.productRepository.findOne({ where: { no: data.no } });
+    if (!product) {
+      throw new NotFoundException('商品不存在');
+    }
+    Object.assign(product, data);
+    try {
+      return await this.productRepository.save(product);
+    } catch (err) {
+      throw new BadRequestException('更新商品失败: ' + err.message);
+    }
   }
 
   async findAll(): Promise<Product[]> {
-    return this.productRepository.find();
+    const list = await this.productRepository.find();
+    if (!list || list.length === 0) {
+      throw new NotFoundException('暂无商品');
+    }
+    return list;
   }
 
-  async findOne(no: string): Promise<Product | null> {
-    return this.productRepository.findOne({ where: { no } });
+  async findAllPaged(page = 1, pageSize = 10, name?: string, categoryNo?: string, status?: string): Promise<PaginationResult<Product>> {
+    const qb = this.productRepository.createQueryBuilder('product');
+    if (name) {
+      qb.andWhere('product.name LIKE :name', { name: `%${name}%` });
+    }
+    if (categoryNo) {
+      qb.andWhere('product.categoryNo = :categoryNo', { categoryNo });
+    }
+    if (status) {
+      qb.andWhere('product.status = :status', { status });
+    }
+    return paginate(qb, page, pageSize);
+  }
+
+  async findOne(no: string): Promise<Product> {
+    const product = await this.productRepository.findOne({ where: { no } });
+    if (!product) {
+      throw new NotFoundException('商品不存在');
+    }
+    return product;
   }
 }
