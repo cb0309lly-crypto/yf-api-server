@@ -1,43 +1,40 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UsePipes } from '@nestjs/common';
 import { Product } from '../entity/product';
 import { ProductService } from './product.service';
-// import { CreateProductDto, UpdateProductDto, ProductListQueryDto } from './dto'; // 可后续补充
+import { CreateProductDto, UpdateProductDto, QueryProductDto, ProductIdDto } from './dto';
+import { ValidationPipe } from '../common/pipes/validation.pipe';
 
 @Controller('product')
+@UsePipes(new ValidationPipe())
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  async create(@Body() body: Partial<Product>): Promise<Product> {
-    return this.productService.addProduct(body);
+  async create(@Body() createProductDto: CreateProductDto): Promise<Product> {
+    return this.productService.addProduct(createProductDto);
   }
 
   @Put()
-  async update(@Body() body: Partial<Product>) {
-    return this.productService.updateProduct(body);
+  async update(@Body() updateProductDto: UpdateProductDto) {
+    return this.productService.updateProduct(updateProductDto);
   }
 
   @Get('/list')
-  async findAll(
-    @Query('page') page = 1,
-    @Query('pageSize') pageSize = 10,
-    @Query('keyword') name?: string,
-    @Query('categoryNo') categoryNo?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.productService.findAllPaged(Number(page), Number(pageSize), name, categoryNo, status);
+  async findAll(@Query() queryProductDto: QueryProductDto) {
+    const { page = 1, pageSize = 10, keyword, categoryNo, status, companyNo, name } = queryProductDto;
+    return this.productService.findAllPaged(page, pageSize, keyword || name, categoryNo, status);
   }
 
   @Delete('/:id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param() params: ProductIdDto) {
     // 软删除可在service实现，这里先简单返回
-    // return this.productService.remove(id);
-    return { message: `删除商品${id}功能待实现` };
+    // return this.productService.remove(params.id);
+    return { message: `删除商品${params.id}功能待实现` };
   }
 
   @Get('/:id')
-  async findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+  async findOne(@Param() params: ProductIdDto) {
+    return this.productService.findOne(params.id);
   }
 
 
