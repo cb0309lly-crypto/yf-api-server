@@ -27,13 +27,13 @@ import { JwtAuthGuard } from './user/jwt-auth.guard';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'rm-bp11a37ok3eh0c9jjbo.mysql.rds.aliyuncs.com',
+      type: 'postgres',
+      host: 'pgm-bp102n397uomya2gko.pg.rds.aliyuncs.com',
       // host: 'localhost',
-      port: 3306,
-      username: 'yf_root',
-      password: 'Yf@123456',
-      database: 'yf-db',
+      port: 5432,
+      username: 'yf_pg',
+      password: 'Cb@920309',
+      database: 'yf',
       synchronize: true,
       // logging: true,
       entities: [__dirname + '/entity/*{.ts,.js}'],
