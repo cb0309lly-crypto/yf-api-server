@@ -21,6 +21,7 @@ import { CouponModule } from './coupon/coupon.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { NotificationModule } from './notification/notification.module';
+import { RedisModule } from './redis/redis.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './user/jwt-auth.guard';
 
@@ -56,6 +57,7 @@ import { JwtAuthGuard } from './user/jwt-auth.guard';
     PromotionModule,
     WishlistModule,
     NotificationModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService,
