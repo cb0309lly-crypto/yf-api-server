@@ -68,18 +68,57 @@ export class UserController {
     return this.userService.loginByOpenId(user);
   }
 
-  @Get('check')
-  userCheck(@Request() req, @Query() query) {
-    return { user: req.user };
-  }
-
-  @Get('user_info')
-  userInfo(@Request() req, @Query() query) {
-    return { user: req.user };
-  }
-
   @Put('logout')
-  logout(@Request() req, @Body() body) {
-    return { message: 'logout', user: req.user };
+  async logout(@Request() req, @Body() body) {
+    // 清除Redis中的token
+    await this.userService.logout(req.user.no);
+    return { message: 'logout成功', user: req.user };
+  }
+
+  // 刷新token
+  @Post('refresh-token')
+  async refreshToken(@Request() req) {
+    const result = await this.userService.refreshToken(req.user.no);
+    if (!result) {
+      throw new UnauthorizedException('刷新token失败');
+    }
+    return result;
+  }
+
+  // 获取用户在线状态
+  @Get('online-status')
+  async getOnlineStatus(@Request() req) {
+    const isOnline = await this.userService.getUserOnlineStatus(req.user.no);
+    return { 
+      isOnline,
+      userNo: req.user.no,
+      message: isOnline ? '用户在线' : '用户离线'
+    };
+  }
+
+  // 验证token有效性
+  @Get('validate-token')
+  async validateToken(@Request() req) {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      throw new UnauthorizedException('Token不能为空');
+    }
+    
+    const isValid = await this.userService.validateTokenFromRedis(req.user.no, token);
+    return {
+      valid: isValid,
+      user: req.user,
+      message: isValid ? 'Token有效' : 'Token无效或已过期'
+    };
+  }
+
+  // 从Redis获取用户信息
+  @Get('redis-user-info')
+  async getRedisUserInfo(@Request() req) {
+    const userInfo = await this.userService.getUserFromRedis(req.user.no);
+    if (!userInfo) {
+      throw new UnauthorizedException('用户信息不存在或已过期');
+    }
+    return { user: userInfo };
   }
 }
