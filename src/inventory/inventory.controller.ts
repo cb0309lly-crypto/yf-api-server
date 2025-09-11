@@ -1,5 +1,8 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, Request } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
+import { InventoryQueryDto } from './dto/inventory-query.dto';
+import { PaginationResult } from '../common/utils/pagination.util';
+import { Inventory } from '../entity/inventory';
 
 @Controller('inventory')
 export class InventoryController {
@@ -10,9 +13,10 @@ export class InventoryController {
     return this.inventoryService.create(body);
   }
 
-  @Get()
-  findAll(@Query() query) {
-    return this.inventoryService.findAll(query);
+  @Get('list')
+  findAll(@Query() query: InventoryQueryDto): Promise<PaginationResult<Inventory>> {
+    const { page = 1, pageSize = 10, keyword, productNo, location, status, minQuantity, maxQuantity } = query;
+    return this.inventoryService.findAllPaged(page, pageSize, keyword, productNo, location, status, minQuantity, maxQuantity);
   }
 
   @Get(':id')

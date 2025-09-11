@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Inventory, InventoryStatus } from '../entity/inventory';
+import { PaginationResult, paginate } from '../common/utils/pagination.util';
 
 @Injectable()
 export class InventoryService {
@@ -33,6 +34,45 @@ export class InventoryService {
       .take(limit);
 
     return queryBuilder.getMany();
+  }
+
+  async findAllPaged(
+    page = 1,
+    pageSize = 10,
+    keyword?: string,
+    productNo?: string,
+    location?: string,
+    status?: InventoryStatus,
+    minQuantity?: number,
+    maxQuantity?: number
+  ): Promise<PaginationResult<Inventory>> {
+    const qb = this.inventoryRepository.createQueryBuilder('inventory');
+    
+    if (keyword) {
+      qb.andWhere(
+        '(inventory.productNo LIKE :keyword OR inventory.warehouseLocation LIKE :keyword)',
+        { keyword: `%${keyword}%` }
+      );
+    }
+    if (productNo) {
+      qb.andWhere('inventory.productNo = :productNo', { productNo });
+    }
+    if (location) {
+      qb.andWhere('inventory.warehouseLocation LIKE :location', { location: `%${location}%` });
+    }
+    if (status) {
+      qb.andWhere('inventory.status = :status', { status });
+    }
+    if (minQuantity !== undefined) {
+      qb.andWhere('inventory.quantity >= :minQuantity', { minQuantity });
+    }
+    if (maxQuantity !== undefined) {
+      qb.andWhere('inventory.quantity <= :maxQuantity', { maxQuantity });
+    }
+    
+    qb.orderBy('inventory.createdAt', 'DESC');
+    
+    return paginate(qb, page, pageSize);
   }
 
   findOne(id: string) {
