@@ -3,6 +3,7 @@ import { SystemService } from './system.service';
 import { System } from '../entity/system';
 import { CreateSystemDto, UpdateSystemDto, QuerySystemDto, SystemIdDto } from './dto';
 import { ValidationPipe } from '../common/pipes/validation.pipe';
+import { PaginationResult } from '../common/utils/pagination.util';
 
 @Controller('system')
 @UsePipes(new ValidationPipe())
@@ -20,7 +21,7 @@ export class SystemController {
   }
   
   @Get('/list')
-  async getList(@Query() querySystemDto: QuerySystemDto) {
+  async getList(@Query() querySystemDto: QuerySystemDto): Promise<PaginationResult<System>> {
     const { page = 1, pageSize = 10, keyword, name, version, materialNo, device, operatorNo, status } = querySystemDto;
     return this.systemService.findAllPaged(page, pageSize, keyword || name, version, materialNo, device, operatorNo, status);
   }

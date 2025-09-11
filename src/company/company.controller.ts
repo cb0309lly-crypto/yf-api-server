@@ -3,6 +3,7 @@ import { CompanyService } from './company.service';
 import { Company } from '../entity/company';
 import { CreateCompanyDto, UpdateCompanyDto, QueryCompanyDto, CompanyIdDto } from './dto';
 import { ValidationPipe } from '../common/pipes/validation.pipe';
+import { PaginationResult } from '../common/utils/pagination.util';
 
 @Controller('company')
 @UsePipes(new ValidationPipe())
@@ -20,7 +21,7 @@ export class CompanyController {
   }
 
   @Get('/list')
-  async findAll(@Query() queryCompanyDto: QueryCompanyDto): Promise<Company[]> {
+  async findAll(@Query() queryCompanyDto: QueryCompanyDto): Promise<PaginationResult<Company>> {
     const { page = 1, pageSize = 10, keyword, name, description, address, taxId, phoneNumber, email, creator } = queryCompanyDto;
     return this.companyService.findAllPaged(page, pageSize, keyword || name, description, address, taxId, phoneNumber, email, creator);
   }

@@ -3,6 +3,7 @@ import { ReceiverService } from './receiver.service';
 import { Receiver } from '../entity/receiver';
 import { CreateReceiverDto, UpdateReceiverDto, QueryReceiverDto, ReceiverIdDto } from './dto';
 import { ValidationPipe } from '../common/pipes/validation.pipe';
+import { PaginationResult } from '../common/utils/pagination.util';
 
 @Controller('receiver')
 @UsePipes(new ValidationPipe())
@@ -25,7 +26,7 @@ export class ReceiverController {
   }
 
   @Get('/list')
-  async getReceiverList(@Query() queryReceiverDto: QueryReceiverDto): Promise<Receiver[]> {
+  async getReceiverList(@Query() queryReceiverDto: QueryReceiverDto): Promise<PaginationResult<Receiver>> {
     const { page = 1, pageSize = 10, keyword, name, address, phone, email, groupBy, description, userNo } = queryReceiverDto;
     return this.receiverService.findAllPaged(page, pageSize, keyword || name, address, phone, email, groupBy, description, userNo);
   }

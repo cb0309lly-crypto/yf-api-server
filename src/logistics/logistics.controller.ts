@@ -3,6 +3,7 @@ import { Logistics } from '../entity/logistics';
 import { LogisticsService } from './logistics.service';
 import { CreateLogisticsDto, UpdateLogisticsDto, QueryLogisticsDto, LogisticsIdDto } from './dto';
 import { ValidationPipe } from '../common/pipes/validation.pipe';
+import { PaginationResult } from '../common/utils/pagination.util';
 
 @Controller('logistics')
 @UsePipes(new ValidationPipe())
@@ -25,7 +26,7 @@ export class LogisticsController {
   }
 
   @Get('/list')
-  getList(@Query() queryLogisticsDto: QueryLogisticsDto): Promise<Logistics[]> {
+  getList(@Query() queryLogisticsDto: QueryLogisticsDto): Promise<PaginationResult<Logistics>> {
     const { page = 1, pageSize = 10, keyword, name, senderNo, receiverNo, orderNo, currentStatus, receive_time } = queryLogisticsDto;
     return this.logisticsService.findAllPaged(page, pageSize, keyword || name, senderNo, receiverNo, orderNo, currentStatus, receive_time);
   }
