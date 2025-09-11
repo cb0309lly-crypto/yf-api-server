@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from '../entity/product';
+import { Product, ProductStatus } from '../entity/product';
 import { paginate, PaginationResult } from '../common/utils/pagination.util';
 
 @Injectable()
@@ -44,7 +44,7 @@ export class ProductService {
     return list;
   }
 
-  async findAllPaged(page = 1, pageSize = 10, name?: string, categoryNo?: string, status?: string): Promise<PaginationResult<Product>> {
+  async findAllPaged(page = 1, pageSize = 10, name?: string, categoryNo?: string, status?: ProductStatus): Promise<PaginationResult<Product>> {
     const qb = this.productRepository.createQueryBuilder('product');
     if (name) {
       qb.andWhere('product.name LIKE :name', { name: `%${name}%` });
@@ -55,6 +55,7 @@ export class ProductService {
     if (status) {
       qb.andWhere('product.status = :status', { status });
     }
+    // 当status为空时，不添加状态过滤条件，查询所有状态的商品
     return paginate(qb, page, pageSize);
   }
 
