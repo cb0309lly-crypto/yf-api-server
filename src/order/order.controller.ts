@@ -1,29 +1,47 @@
-import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { Order } from '../entity/order';
-import { OrderQueryDto } from './dto/order-query.dto';
+import {
+  CreateOrderDto,
+  UpdateOrderDto,
+  OrderQueryDto,
+  OrderIdDto,
+} from './dto';
+import { ValidationPipe } from '../common/pipes/validation.pipe';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
-  addOrder(@Body() body: Partial<Order>): Promise<Order> {
-    return this.orderService.addOrder(body);
+  addOrder(
+    @Body(ValidationPipe) body: CreateOrderDto,
+    @Request() req,
+  ): Promise<Order> {
+    // 从用户上下文中获取 user_no
+    const orderData = {
+      ...body,
+      userNo: req.user.no,
+    };
+    return this.orderService.addOrder(orderData);
   }
 
   @Put()
-  editOrder(@Body() body: Partial<Order>): Promise<Order> {
+  editOrder(@Body(ValidationPipe) body: UpdateOrderDto): Promise<Order> {
     return this.orderService.updateOrder(body);
   }
 
-  @Get('/:id')
-  getOne(@Param('id') id: string): Promise<Order | null> {
-    return this.orderService.findOne(id);
-  }
-
   @Get('/list')
-  getPagedList(@Query() query: OrderQueryDto) {
+  getPagedList(@Query(ValidationPipe) query: OrderQueryDto) {
     const {
       page = 1,
       pageSize = 10,
@@ -41,5 +59,10 @@ export class OrderController {
       operatorNo,
       customerNo,
     );
+  }
+
+  @Get(':id')
+  getOne(@Param(ValidationPipe) params: OrderIdDto): Promise<Order | null> {
+    return this.orderService.findOne(params.id);
   }
 }

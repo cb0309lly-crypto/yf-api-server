@@ -6,6 +6,15 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   // 创建HTTP应用
   const app = await NestFactory.create(AppModule);
+  
+  // 启用CORS
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // 允许的前端域名
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+  
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new CommonResponseInterceptor());
   

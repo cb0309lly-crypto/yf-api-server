@@ -2,8 +2,7 @@ import { IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validato
 import { OrderStatus } from '../../entity/order';
 
 export class CreateOrderDto {
-  @IsString({ message: '用户编号不能为空' })
-  userNo: string;
+  // userNo 将从用户上下文中获取，不需要在 DTO 中定义
 
   @IsOptional()
   @IsString({ message: '收货地址必须是字符串' })
