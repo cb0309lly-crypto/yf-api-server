@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { Order } from '../entity/order';
+import { OrderQueryDto } from './dto/order-query.dto';
 
 @Controller('order')
 export class OrderController {
@@ -22,7 +23,23 @@ export class OrderController {
   }
 
   @Get('/list')
-  getList() {
-    return this.orderService.findAll();
+  getPagedList(@Query() query: OrderQueryDto) {
+    const {
+      page = 1,
+      pageSize = 10,
+      userNo,
+      orderStatus,
+      operatorNo,
+      customerNo,
+    } = query;
+    return this.orderService.findAllPaged(
+      page,
+      pageSize,
+      undefined, // keyword 暂时不传递，可以根据需要添加
+      userNo,
+      orderStatus as any,
+      operatorNo,
+      customerNo,
+    );
   }
 }
