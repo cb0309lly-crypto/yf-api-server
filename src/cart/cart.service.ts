@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cart, CartItemStatus } from '../entity/cart';
+import { Product } from '../entity/product';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectRepository(Cart)
     private cartRepository: Repository<Cart>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
   ) {}
 
   create(body) {
@@ -51,37 +54,79 @@ export class CartService {
     return this.cartRepository.delete(id);
   }
 
-  getUserCart(userId: string) {
-    return this.cartRepository.find({
+  async getUserCart(userId: string) {
+    const cartItems = await this.cartRepository.find({
       where: { userNo: userId, status: CartItemStatus.ACTIVE },
       relations: ['product'],
       order: { addedAt: 'DESC' },
     });
+
+    // 计算购物车总价，确保数据类型转换
+    const totalPrice = cartItems.reduce((sum, item) => {
+      const price = this.parseNumber(item.totalPrice);
+      return sum + price;
+    }, 0);
+
+    return {
+      items: cartItems,
+      totalPrice: totalPrice,
+      itemCount: cartItems.length
+    };
   }
 
-  addToCart(body) {
+  // 解析数字，处理字符串转数字的情况
+  private parseNumber(value: any): number {
+    if (value === null || value === undefined) {
+      return 0;
+    }
+    
+    if (typeof value === 'number') {
+      return value;
+    }
+    
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    
+    return 0;
+  }
+
+  async addToCart(body) {
     const { userNo, productNo, quantity = 1 } = body;
     
+    // 获取商品信息
+    const product = await this.productRepository.findOne({ where: { no: productNo } });
+    
+    if (!product) {
+      throw new Error('商品不存在');
+    }
+    
     // 检查是否已存在
-    return this.cartRepository.findOne({
+    const existingItem = await this.cartRepository.findOne({
       where: { userNo, productNo, status: CartItemStatus.ACTIVE },
-    }).then(existingItem => {
-      if (existingItem) {
-        // 更新数量
-        existingItem.quantity += quantity;
-        existingItem.totalPrice = existingItem.unitPrice * existingItem.quantity;
-        return this.cartRepository.save(existingItem);
-      } else {
-        // 创建新项目
-        const cartItem = this.cartRepository.create({
-          userNo,
-          productNo,
-          quantity,
-          addedAt: new Date(),
-        });
-        return this.cartRepository.save(cartItem);
-      }
     });
+    
+    if (existingItem) {
+      // 更新数量
+      existingItem.quantity += quantity;
+      const unitPrice = this.parseNumber(existingItem.unitPrice);
+      existingItem.totalPrice = unitPrice * existingItem.quantity;
+      return this.cartRepository.save(existingItem);
+    } else {
+      // 创建新项目
+      const productPrice = this.parseNumber(product.price);
+      const cartItem = this.cartRepository.create({
+        userNo,
+        productNo,
+        quantity,
+        unitPrice: productPrice,
+        totalPrice: productPrice * quantity,
+        addedAt: new Date(),
+        name: `cart-${userNo}-${Date.now().toString()}`
+      });
+      return this.cartRepository.save(cartItem);
+    }
   }
 
   removeFromCart(body) {
@@ -104,7 +149,8 @@ export class CartService {
     return this.cartRepository.findOne({ where: { no: id } }).then(item => {
       if (item) {
         item.quantity = quantity;
-        item.totalPrice = item.unitPrice * quantity;
+        const unitPrice = this.parseNumber(item.unitPrice);
+        item.totalPrice = unitPrice * quantity;
         return this.cartRepository.save(item);
       }
     });

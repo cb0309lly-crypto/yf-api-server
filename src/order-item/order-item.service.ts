@@ -59,8 +59,39 @@ export class OrderItemService {
     });
   }
 
-  createBatch(body) {
+  async createBatch(body, userNo: string) {
     const { orderItems } = body;
-    return this.orderItemRepository.save(orderItems);
+    
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
+      throw new Error('订单项列表不能为空');
+    }
+
+    // 准备批量插入的数据
+    const insertData = orderItems.map((item, index) => ({
+      ...item,
+      name: `${userNo}-order-item-${Date.now()}-${index}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    // 使用 QueryBuilder 进行批量插入 - 最高效的方式
+    const result = await this.orderItemRepository
+      .createQueryBuilder()
+      .insert()
+      .into(OrderItem)
+      .values(insertData)
+      .execute();
+
+    // 检查插入结果
+    if (result.identifiers.length === 0) {
+      throw new Error('批量插入失败');
+    }
+
+    // 如果不需要返回完整数据，直接返回插入结果
+    return {
+      success: true,
+      count: result.identifiers.length,
+      message: `成功插入 ${result.identifiers.length} 条订单项`
+    };
   }
 } 

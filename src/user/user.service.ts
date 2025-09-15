@@ -201,4 +201,29 @@ export class UserService {
       return false;
     }
   }
+
+  // 分页查询用户列表
+  async findAllPaged(page = 1, pageSize = 10, keyword?: string) {
+    const qb = this.userRepository.createQueryBuilder('user');
+    
+    if (keyword) {
+      qb.andWhere(
+        '(user.nickname LIKE :keyword OR user.phone LIKE :keyword OR user.authLogin LIKE :keyword)',
+        { keyword: `%${keyword}%` }
+      );
+    }
+    
+    qb.orderBy('user.createdAt', 'DESC');
+    
+    const skip = (page - 1) * pageSize;
+    const [users, total] = await qb.skip(skip).take(pageSize).getManyAndCount();
+    
+    return {
+      list: users,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
+  }
 }

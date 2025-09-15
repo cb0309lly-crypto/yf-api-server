@@ -12,7 +12,7 @@ export class OrderService {
   ) {}
 
   addOrder(data: Partial<Order>): Promise<Order> {
-    const order = this.orderRepository.create(data);
+    const order = this.orderRepository.create({ ...data, name: `${data.userNo}-order-${Date.now()}` });
     return this.orderRepository.save(order);
   }
 

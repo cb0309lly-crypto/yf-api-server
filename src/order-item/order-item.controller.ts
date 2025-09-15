@@ -36,7 +36,7 @@ export class OrderItemController {
   }
 
   @Post('batch')
-  createBatch(@Body() body) {
-    return this.orderItemService.createBatch(body);
+  createBatch(@Body() body,@Request() req,) {
+    return this.orderItemService.createBatch(body, req.user.no);
   }
 } 

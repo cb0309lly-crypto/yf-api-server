@@ -121,4 +121,11 @@ export class UserController {
     }
     return { user: userInfo };
   }
+
+  // 获取用户列表
+  @Get('list')
+  async getUserList(@Query() query: any) {
+    const { page = 1, pageSize = 10, keyword } = query;
+    return this.userService.findAllPaged(page, pageSize, keyword);
+  }
 }
