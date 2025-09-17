@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Base } from './base';
 
 export enum SystemStatus {
@@ -13,12 +13,16 @@ export enum SystemStatus {
 export class System extends Base {
   @Column()
   version: string;
-  @Column({ name: 'material_no', nullable: true })
-  materialNo: string;
+
+  @Column({ name: 'material', nullable: true })
+  material: string;
+
   @Column({ nullable: true })
   device: string;
+
   @Column({ nullable: true, name: 'operator_no' })
   operatorNo: string;
+
   @Column({ type: 'enum', enum: SystemStatus, default: SystemStatus.Init })
   status: SystemStatus;
 }

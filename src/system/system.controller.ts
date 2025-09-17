@@ -22,8 +22,8 @@ export class SystemController {
   
   @Get('/list')
   async getList(@Query() querySystemDto: QuerySystemDto): Promise<PaginationResult<System>> {
-    const { page = 1, pageSize = 10, keyword, name, version, materialNo, device, operatorNo, status } = querySystemDto;
-    return this.systemService.findAllPaged(page, pageSize, keyword || name, version, materialNo, device, operatorNo, status);
+    const { page = 1, pageSize = 10, keyword, name, version, material, device, operatorNo, status } = querySystemDto;
+    return this.systemService.findAllPaged(page, pageSize, keyword || name, version, material, device, operatorNo, status);
   }
   
   @Get('/:no')

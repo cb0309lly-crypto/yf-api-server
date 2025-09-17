@@ -19,7 +19,7 @@ export class UpdateSystemDto {
   @IsOptional()
   @IsString({ message: '物料编号必须是字符串' })
   @Length(1, 50, { message: '物料编号长度必须在1-50个字符之间' })
-  materialNo?: string;
+  material?: string;
 
   @IsOptional()
   @IsString({ message: '设备名称必须是字符串' })

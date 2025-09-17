@@ -26,7 +26,7 @@ export class QuerySystemDto {
 
   @IsOptional()
   @IsString({ message: '物料编号必须是字符串' })
-  materialNo?: string;
+  material?: string;
 
   @IsOptional()
   @IsString({ message: '设备名称必须是字符串' })
