@@ -16,15 +16,18 @@ import {
   OrderQueryDto,
   OrderIdDto,
 } from './dto';
-import { ValidationPipe } from '../common/pipes/validation.pipe';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('订单管理')
+@ApiBearerAuth()
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
+  @ApiOperation({ summary: '创建订单' })
   addOrder(
-    @Body(ValidationPipe) body: CreateOrderDto,
+    @Body() body: CreateOrderDto,
     @Request() req,
   ): Promise<Order> {
     // 从用户上下文中获取 user_no
@@ -36,12 +39,14 @@ export class OrderController {
   }
 
   @Put()
-  editOrder(@Body(ValidationPipe) body: UpdateOrderDto): Promise<Order> {
+  @ApiOperation({ summary: '更新订单' })
+  editOrder(@Body() body: UpdateOrderDto): Promise<Order> {
     return this.orderService.updateOrder(body);
   }
 
   @Get('/list')
-  getPagedList(@Query(ValidationPipe) query: OrderQueryDto) {
+  @ApiOperation({ summary: '获取订单列表' })
+  getPagedList(@Query() query: OrderQueryDto) {
     const {
       page = 1,
       pageSize = 10,
@@ -62,7 +67,8 @@ export class OrderController {
   }
 
   @Get(':id')
-  getOne(@Param(ValidationPipe) params: OrderIdDto): Promise<Order | null> {
+  @ApiOperation({ summary: '获取订单详情' })
+  getOne(@Param() params: OrderIdDto): Promise<Order | null> {
     return this.orderService.findOne(params.id);
   }
 }

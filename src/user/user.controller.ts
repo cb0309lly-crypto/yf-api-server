@@ -1,16 +1,18 @@
-import { Controller, Put, Get, Body, Post, Query, Request, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Put, Get, Body, Post, Query, Request, UnauthorizedException, BadRequestException, UsePipes, ValidationPipe } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Public } from '../common/decorators/public.decorator';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { LoginDto, RegisterDto, WxLoginDto, OpenIdLoginDto, UserQueryDto } from './dto';
 import axios from 'axios';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('用户认证')
 @Controller('auth')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Public()
   @Post('/login')
+  @ApiOperation({ summary: '用户登录' })
   async userLogin(@Body() body: LoginDto) {
     const result = await this.userService.login(body);
     if (!result) {
@@ -21,6 +23,7 @@ export class UserController {
 
   @Public()
   @Post('register')
+  @ApiOperation({ summary: '用户注册' })
   async register(@Body() body: RegisterDto) {
     const user = await this.userService.register(body);
     if (!user) {
@@ -31,11 +34,9 @@ export class UserController {
 
   @Public()
   @Post('wxlogin')
-  async wxLogin(@Body() body) {
+  @ApiOperation({ summary: '微信登录' })
+  async wxLogin(@Body() body: WxLoginDto) {
     const { code, nickname, avatar } = body;
-    if (!code) {
-      throw new BadRequestException('code不能为空');
-    }
     // 用 code 换 openid
     const appid = '你的微信小程序appid';
     const secret = '你的微信小程序secret';
@@ -56,11 +57,9 @@ export class UserController {
 
   @Public()
   @Post('openid-login')
-  async openIdLogin(@Body() body) {
+  @ApiOperation({ summary: 'OpenID 登录' })
+  async openIdLogin(@Body() body: OpenIdLoginDto) {
     const { openId, nickname, avatar } = body;
-    if (!openId) {
-      throw new BadRequestException('openId不能为空');
-    }
     let user = await this.userService.findByOpenId(openId);
     if (!user) {
       user = await this.userService.registerWxUser({ openId, nickname, avatar });
@@ -68,7 +67,9 @@ export class UserController {
     return this.userService.loginByOpenId(user);
   }
 
+  @ApiBearerAuth()
   @Put('logout')
+  @ApiOperation({ summary: '用户登出' })
   async logout(@Request() req, @Body() body) {
     // 清除Redis中的token
     await this.userService.logout(req.user.no);
@@ -76,7 +77,9 @@ export class UserController {
   }
 
   // 刷新token
+  @ApiBearerAuth()
   @Post('refresh-token')
+  @ApiOperation({ summary: '刷新 Token' })
   async refreshToken(@Request() req) {
     const result = await this.userService.refreshToken(req.user.no);
     if (!result) {
@@ -86,7 +89,9 @@ export class UserController {
   }
 
   // 获取用户在线状态
+  @ApiBearerAuth()
   @Get('online-status')
+  @ApiOperation({ summary: '获取在线状态' })
   async getOnlineStatus(@Request() req) {
     const isOnline = await this.userService.getUserOnlineStatus(req.user.no);
     return { 
@@ -97,7 +102,9 @@ export class UserController {
   }
 
   // 验证token有效性
+  @ApiBearerAuth()
   @Get('validate-token')
+  @ApiOperation({ summary: '验证 Token' })
   async validateToken(@Request() req) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -113,7 +120,9 @@ export class UserController {
   }
 
   // 从Redis获取用户信息
+  @ApiBearerAuth()
   @Get('redis-user-info')
+  @ApiOperation({ summary: '获取缓存的用户信息' })
   async getRedisUserInfo(@Request() req) {
     const userInfo = await this.userService.getUserFromRedis(req.user.no);
     if (!userInfo) {
@@ -123,8 +132,10 @@ export class UserController {
   }
 
   // 获取用户列表
+  @ApiBearerAuth()
   @Get('list')
-  async getUserList(@Query() query: any) {
+  @ApiOperation({ summary: '获取用户列表' })
+  async getUserList(@Query() query: UserQueryDto) {
     const { page = 1, pageSize = 10, keyword } = query;
     return this.userService.findAllPaged(page, pageSize, keyword);
   }
