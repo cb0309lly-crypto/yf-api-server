@@ -26,10 +26,7 @@ export class OrderController {
 
   @Post()
   @ApiOperation({ summary: '创建订单' })
-  addOrder(
-    @Body() body: CreateOrderDto,
-    @Request() req,
-  ): Promise<Order> {
+  addOrder(@Body() body: CreateOrderDto, @Request() req): Promise<Order> {
     // 从用户上下文中获取 user_no
     const orderData = {
       ...body,
@@ -50,6 +47,7 @@ export class OrderController {
     const {
       page = 1,
       pageSize = 10,
+      keyword,
       userNo,
       orderStatus,
       operatorNo,
@@ -58,7 +56,7 @@ export class OrderController {
     return this.orderService.findAllPaged(
       page,
       pageSize,
-      undefined, // keyword 暂时不传递，可以根据需要添加
+      keyword,
       userNo,
       orderStatus as any,
       operatorNo,

@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Param, Get, Query, Put, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Get,
+  Query,
+  Put,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RefundService } from './refund.service';
 import { CreateRefundDto } from './dto/create-refund.dto';
@@ -18,7 +27,10 @@ export class RefundController {
 
   @Put('audit/:refundNo')
   @ApiOperation({ summary: '审核退款 (管理员)' })
-  async audit(@Param('refundNo') refundNo: string, @Body() dto: AuditRefundDto) {
+  async audit(
+    @Param('refundNo') refundNo: string,
+    @Body() dto: AuditRefundDto,
+  ) {
     return this.refundService.audit(refundNo, dto);
   }
 
@@ -26,6 +38,10 @@ export class RefundController {
   @ApiOperation({ summary: '退款列表 (管理员)' })
   async list(@Query() query) {
     const { page, pageSize, status } = query;
-    return this.refundService.findAll(Number(page) || 1, Number(pageSize) || 10, status);
+    return this.refundService.findAll(
+      Number(page) || 1,
+      Number(pageSize) || 10,
+      status,
+    );
   }
 }

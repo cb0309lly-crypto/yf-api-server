@@ -21,7 +21,6 @@ import { CouponModule } from './coupon/coupon.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { NotificationModule } from './notification/notification.module';
-import { RedisModule } from './redis/redis.module';
 import { StatsModule } from './stats/stats.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './user/jwt-auth.guard';
@@ -30,6 +29,8 @@ import { UploadModule } from './upload/upload.module';
 import { join } from 'path';
 
 import { ScheduleModule } from '@nestjs/schedule';
+import { SystemManageModule } from './system-manage/system-manage.module';
+import { RefundModule } from './refund/refund.module';
 
 @Module({
   imports: [
@@ -70,12 +71,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     PromotionModule,
     WishlistModule,
     NotificationModule,
-    RedisModule,
     StatsModule,
     RefundModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

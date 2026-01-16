@@ -3,9 +3,6 @@ import { Base } from './base';
 
 @Entity('yf_db_menu')
 export class Menu extends Base {
-  @Column()
-  name: string;
-
   @Column({ name: 'parent_id', nullable: true })
   parentId: string;
 

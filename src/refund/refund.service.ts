@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Refund, RefundStatus, Order, OrderStatus } from '../entity';
@@ -15,13 +19,19 @@ export class RefundService {
   ) {}
 
   async create(userNo: string, dto: CreateRefundDto) {
-    const order = await this.orderRepository.findOne({ where: { no: dto.orderNo, userNo } });
+    const order = await this.orderRepository.findOne({
+      where: { no: dto.orderNo, userNo },
+    });
     if (!order) {
       throw new NotFoundException('订单不存在');
     }
-    
+
     // 简单校验：只有已付款或待发货状态可申请退款
-    if (![OrderStatus.PAIED, OrderStatus.DELIVERY, OrderStatus.ORDERED].includes(order.orderStatus as any)) {
+    if (
+      ![OrderStatus.PAIED, OrderStatus.DELIVERY, OrderStatus.ORDERED].includes(
+        order.orderStatus as any,
+      )
+    ) {
       // 这里的 OrderStatus 枚举值定义可能需要调整以匹配实际业务
       // 假设只要不是已取消或已退款即可
     }
@@ -30,14 +40,17 @@ export class RefundService {
       ...dto,
       userNo,
       refundNo: `REF${Date.now()}`,
-      status: RefundStatus.PENDING
+      status: RefundStatus.PENDING,
     });
 
     return this.refundRepository.save(refund);
   }
 
   async audit(refundNo: string, dto: AuditRefundDto) {
-    const refund = await this.refundRepository.findOne({ where: { refundNo }, relations: ['order'] });
+    const refund = await this.refundRepository.findOne({
+      where: { refundNo },
+      relations: ['order'],
+    });
     if (!refund) {
       throw new NotFoundException('退款单不存在');
     }
@@ -54,7 +67,7 @@ export class RefundService {
       // 模拟打款成功
       refund.completedTime = new Date();
       refund.status = RefundStatus.COMPLETED;
-      
+
       // 更新订单状态为已退款 (或部分退款逻辑)
       // 这里简单处理：全额退款则关闭订单
       // 实际业务中需要更复杂的判断
@@ -64,7 +77,8 @@ export class RefundService {
   }
 
   async findAll(page = 1, pageSize = 10, status?: string) {
-    const qb = this.refundRepository.createQueryBuilder('refund')
+    const qb = this.refundRepository
+      .createQueryBuilder('refund')
       .leftJoinAndSelect('refund.user', 'user')
       .leftJoinAndSelect('refund.order', 'order')
       .orderBy('refund.createdAt', 'DESC')

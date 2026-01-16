@@ -11,7 +11,7 @@ import { CouponModule } from '../coupon/coupon.module';
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem]),
     InventoryModule,
-    CouponModule
+    CouponModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

@@ -22,7 +22,7 @@ export class StatsService {
   async getCardData() {
     const userCount = await this.userRepository.count();
     const orderCount = await this.orderRepository.count();
-    
+
     // Calculate GMV (Total successful payment amount)
     const { totalTurnover } = await this.paymentRepository
       .createQueryBuilder('payment')
@@ -36,7 +36,7 @@ export class StatsService {
         { orderStatus: OrderStatus.PAIED },
         { orderStatus: OrderStatus.DELIVERY },
         // Add COMPLETED status if available
-      ]
+      ],
     });
 
     return {
@@ -51,7 +51,7 @@ export class StatsService {
     // Get last 7 days order count trend
     const today = new Date();
     const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+
     const orders = await this.orderRepository
       .createQueryBuilder('order')
       .select("TO_CHAR(order.created_at, 'YYYY-MM-DD')", 'date')
@@ -64,7 +64,7 @@ export class StatsService {
     // Fill missing dates with 0 (simplified for now, just returning raw data)
     // Note: TO_CHAR is PostgreSQL specific. For MySQL use DATE_FORMAT(order.created_at, '%Y-%m-%d')
     // Assuming PostgreSQL based on app.module.ts config
-    
+
     return orders;
   }
 
@@ -72,7 +72,7 @@ export class StatsService {
     // Get product category distribution (simplified: using hardcoded categories or grouping by product type if available)
     // Since we don't have category relation in product easily accessible or data might be sparse:
     // We mock this based on real counts if possible, or just return static structure for now until Category-Product relation is robust.
-    
+
     // Let's count orders by status for the pie chart
     const statusCounts = await this.orderRepository
       .createQueryBuilder('order')
@@ -81,10 +81,9 @@ export class StatsService {
       .groupBy('status')
       .getRawMany();
 
-    return statusCounts.map(item => ({
+    return statusCounts.map((item) => ({
       name: item.status,
-      value: Number(item.count)
+      value: Number(item.count),
     }));
   }
 }
-

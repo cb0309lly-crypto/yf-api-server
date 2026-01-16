@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { PromotionService } from './promotion.service';
-import { CreatePromotionDto, UpdatePromotionDto, PromotionQueryDto, PromotionIdDto } from './dto';
+import {
+  CreatePromotionDto,
+  UpdatePromotionDto,
+  PromotionQueryDto,
+  PromotionIdDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('促销管理')

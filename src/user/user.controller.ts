@@ -1,7 +1,25 @@
-import { Controller, Put, Get, Body, Post, Query, Request, UnauthorizedException, BadRequestException, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Put,
+  Get,
+  Body,
+  Post,
+  Query,
+  Request,
+  UnauthorizedException,
+  BadRequestException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { Public } from '../common/decorators/public.decorator';
-import { LoginDto, RegisterDto, WxLoginDto, OpenIdLoginDto, UserQueryDto } from './dto';
+import {
+  LoginDto,
+  RegisterDto,
+  WxLoginDto,
+  OpenIdLoginDto,
+  UserQueryDto,
+} from './dto';
 import axios from 'axios';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -49,7 +67,11 @@ export class UserController {
     // 查找或注册用户
     let user = await this.userService.findByOpenId(openid);
     if (!user) {
-      user = await this.userService.registerWxUser({ openId: openid, nickname, avatar });
+      user = await this.userService.registerWxUser({
+        openId: openid,
+        nickname,
+        avatar,
+      });
     }
     // 生成token
     return this.userService.loginByOpenId(user);
@@ -62,7 +84,11 @@ export class UserController {
     const { openId, nickname, avatar } = body;
     let user = await this.userService.findByOpenId(openId);
     if (!user) {
-      user = await this.userService.registerWxUser({ openId, nickname, avatar });
+      user = await this.userService.registerWxUser({
+        openId,
+        nickname,
+        avatar,
+      });
     }
     return this.userService.loginByOpenId(user);
   }
@@ -94,10 +120,10 @@ export class UserController {
   @ApiOperation({ summary: '获取在线状态' })
   async getOnlineStatus(@Request() req) {
     const isOnline = await this.userService.getUserOnlineStatus(req.user.no);
-    return { 
+    return {
       isOnline,
       userNo: req.user.no,
-      message: isOnline ? '用户在线' : '用户离线'
+      message: isOnline ? '用户在线' : '用户离线',
     };
   }
 
@@ -110,12 +136,15 @@ export class UserController {
     if (!token) {
       throw new UnauthorizedException('Token不能为空');
     }
-    
-    const isValid = await this.userService.validateTokenFromRedis(req.user.no, token);
+
+    const isValid = await this.userService.validateTokenFromRedis(
+      req.user.no,
+      token,
+    );
     return {
       valid: isValid,
       user: req.user,
-      message: isValid ? 'Token有效' : 'Token无效或已过期'
+      message: isValid ? 'Token有效' : 'Token无效或已过期',
     };
   }
 
@@ -129,6 +158,17 @@ export class UserController {
       throw new UnauthorizedException('用户信息不存在或已过期');
     }
     return { user: userInfo };
+  }
+
+  @ApiBearerAuth()
+  @Get('user_info')
+  @ApiOperation({ summary: '获取用户信息' })
+  async getUserInfo(@Request() req) {
+    const userInfo = await this.userService.getAuthUserInfo(req.user.no);
+    if (!userInfo) {
+      throw new UnauthorizedException('用户不存在');
+    }
+    return userInfo;
   }
 
   // 获取用户列表

@@ -30,4 +30,8 @@ export class OrderQueryDto {
   @IsOptional()
   @IsString({ message: '客户编号必须是字符串' })
   customerNo?: string;
+
+  @IsOptional()
+  @IsString({ message: '关键词必须是字符串' })
+  keyword?: string;
 }

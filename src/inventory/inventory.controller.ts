@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { CreateInventoryDto, UpdateInventoryDto, InventoryQueryDto, InventoryIdDto } from './dto';
+import {
+  CreateInventoryDto,
+  UpdateInventoryDto,
+  InventoryQueryDto,
+  InventoryIdDto,
+} from './dto';
 import { PaginationResult } from '../common/utils/pagination.util';
 import { Inventory } from '../entity/inventory';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -19,9 +33,29 @@ export class InventoryController {
 
   @Get('list')
   @ApiOperation({ summary: '获取库存列表' })
-  findAll(@Query() query: InventoryQueryDto): Promise<PaginationResult<Inventory>> {
-    const { page = 1, pageSize = 10, keyword, productNo, location, status, minQuantity, maxQuantity } = query;
-    return this.inventoryService.findAllPaged(page, pageSize, keyword, productNo, location, status, minQuantity, maxQuantity);
+  findAll(
+    @Query() query: InventoryQueryDto,
+  ): Promise<PaginationResult<Inventory>> {
+    const {
+      page = 1,
+      pageSize = 10,
+      keyword,
+      productNo,
+      location,
+      status,
+      minQuantity,
+      maxQuantity,
+    } = query;
+    return this.inventoryService.findAllPaged(
+      page,
+      pageSize,
+      keyword,
+      productNo,
+      location,
+      status,
+      minQuantity,
+      maxQuantity,
+    );
   }
 
   @Get('low-stock/alerts')

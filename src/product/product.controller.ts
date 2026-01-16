@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { Product } from '../entity/product';
 import { ProductService } from './product.service';
-import { CreateProductDto, UpdateProductDto, QueryProductDto, ProductIdDto } from './dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  QueryProductDto,
+  ProductIdDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('商品管理')
@@ -25,8 +39,22 @@ export class ProductController {
   @Get('/list')
   @ApiOperation({ summary: '获取商品列表' })
   async findAll(@Query() queryProductDto: QueryProductDto) {
-    const { page = 1, pageSize = 10, keyword, categoryNo, status, companyNo, name } = queryProductDto;
-    return this.productService.findAllPaged(page, pageSize, keyword || name, categoryNo, status);
+    const {
+      page = 1,
+      pageSize = 10,
+      keyword,
+      categoryNo,
+      status,
+      companyNo,
+      name,
+    } = queryProductDto;
+    return this.productService.findAllPaged(
+      page,
+      pageSize,
+      keyword || name,
+      categoryNo,
+      status,
+    );
   }
 
   @Get('/:id')

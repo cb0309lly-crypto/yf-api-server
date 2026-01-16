@@ -4,9 +4,6 @@ import { Menu } from './menu';
 
 @Entity('yf_db_role')
 export class Role extends Base {
-  @Column()
-  name: string;
-
   @Column({ unique: true })
   code: string;
 

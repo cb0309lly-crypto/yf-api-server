@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Payment, PaymentMethod, PaymentStatus } from '../entity/payment';
+import { Payment, PaymentStatus } from '../entity/payment';
+import { Order, OrderStatus } from '../entity/order';
 
 @Injectable()
 export class PaymentService {
   constructor(
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
   ) {}
 
   create(body) {
@@ -87,7 +90,7 @@ export class PaymentService {
         // 支付成功后更新订单状态为"待发货"
         await this.orderRepository.update(
           { no: orderNo },
-          { orderStatus: OrderStatus.PENDING_SHIPMENT }
+          { orderStatus: OrderStatus.PAIED },
         );
       }, 1000);
 

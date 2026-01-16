@@ -6,6 +6,7 @@ import { OrderItem } from '../entity/order-item';
 import { PaginationResult, paginate } from '../common/utils/pagination.util';
 import { InventoryService } from '../inventory/inventory.service';
 import { CouponService } from '../coupon/coupon.service';
+import { CouponType } from '../entity/coupon';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -27,28 +28,30 @@ export class OrderService {
   @Cron(CronExpression.EVERY_MINUTE)
   async handleTimeoutOrders() {
     this.logger.debug('Running timeout order check...');
-    
+
     const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30 mins ago
 
     const timeoutOrders = await this.orderRepository.find({
       where: {
-        orderStatus: OrderStatus.PENDING_PAYMENT,
+        orderStatus: OrderStatus.UNPAY,
         createdAt: LessThan(timeoutThreshold),
       },
-      relations: ['orderItems']
+      relations: ['orderItems'],
     });
 
     if (timeoutOrders.length > 0) {
-      this.logger.log(`Found ${timeoutOrders.length} timeout orders. Closing...`);
-      
+      this.logger.log(
+        `Found ${timeoutOrders.length} timeout orders. Closing...`,
+      );
+
       for (const order of timeoutOrders) {
         // 在实际业务中，可能需要归还库存
         // 这里简单实现：更新状态为已取消
         await this.orderRepository.update(order.no, {
-          orderStatus: OrderStatus.CANCELLED,
-          remark: 'Order timeout auto-cancelled'
+          orderStatus: OrderStatus.CANCELED,
+          remark: 'Order timeout auto-cancelled',
         });
-        
+
         // 归还库存逻辑 (可选)
         // for (const item of order.orderItems) {
         //   await this.inventoryService.restock(item.productNo, item.quantity);
@@ -65,63 +68,71 @@ export class OrderService {
     try {
       // 1. 验证优惠券
       let discountAmount = 0;
+      const orderTotal = data.orderTotal ?? 0;
       if (data.couponId) {
-        const validation = await this.couponService.validateCoupon({
-          code: data.couponId, // Using ID as code for simplicity based on current service
-          amount: data.orderTotal,
-        });
-        
         // Try finding by ID if code lookup fails or implement dedicated ID check
         // For now assuming couponService.validateCoupon handles logic or we extend it
         // Let's rely on a direct check for better safety in transaction
         const coupon = await this.couponService.findOne(data.couponId);
-        if (!coupon || coupon.status !== 'active') { // Assuming 'active' is the status string value
-           // If strict check needed: throw new BadRequestException('优惠券不可用');
+        if (!coupon || coupon.status !== 'active') {
+          // Assuming 'active' is the status string value
+          // If strict check needed: throw new BadRequestException('优惠券不可用');
         } else {
-           // Simple discount calculation
-           if (coupon.type === 'fixed') {
-             discountAmount = coupon.value || 0;
-           } else if (coupon.type === 'percentage') {
-             discountAmount = data.orderTotal * ((coupon.value || 0) / 100);
-           }
+          // Simple discount calculation
+          if (coupon.type === CouponType.FIXED_AMOUNT) {
+            discountAmount = coupon.value ?? 0;
+          } else if (coupon.type === CouponType.PERCENTAGE) {
+            discountAmount = orderTotal * ((coupon.value ?? 0) / 100);
+          }
         }
       }
 
       // 2. 创建订单对象
       const order = this.orderRepository.create({
         ...data,
+        orderTotal,
         name: `${data.userNo}-order-${Date.now()}`,
-        orderStatus: OrderStatus.PENDING_PAYMENT, // Initial status
+        orderStatus: OrderStatus.UNPAY,
       });
       const savedOrder = await queryRunner.manager.save(order);
 
       // 3. 处理订单项与扣减库存
       if (data.items && data.items.length > 0) {
         for (const item of data.items) {
-          // 扣减库存 (Using InventoryService logic but within transaction if possible, 
+          // 扣减库存 (Using InventoryService logic but within transaction if possible,
           // or ensuring InventoryService operations are atomic)
           // Since InventoryService.reserve uses specific UPDATE query, it's safer.
           // However, for strict transaction consistency, better to use queryRunner.
           // For now, calling service.reserve (optimistic locking pattern or atomic update)
-          
+
           // Get inventory ID by productNo (assuming 1:1 for simplicity or pick first)
-          const inventory = await this.inventoryService.getProductInventory(item.productNo);
+          const inventory = await this.inventoryService.getProductInventory(
+            item.productNo,
+          );
           if (!inventory) {
             throw new BadRequestException(`商品 ${item.productNo} 库存不存在`);
           }
-          
-          const result = await this.inventoryService.reserve(inventory.no, item.quantity);
+
+          const result = await this.inventoryService.reserve(
+            inventory.no,
+            item.quantity,
+          );
           if (result.affected === 0) {
-             throw new BadRequestException(`商品 ${item.productNo} 库存不足`);
+            throw new BadRequestException(`商品 ${item.productNo} 库存不足`);
           }
 
           // Create OrderItem
+          const unitPrice = item.price;
+          const totalPrice = unitPrice * item.quantity;
           const orderItem = this.orderItemRepository.create({
+            name: `${savedOrder.no}-item-${item.productNo}`,
             orderNo: savedOrder.no,
             productNo: item.productNo,
             quantity: item.quantity,
-            price: item.price,
-            userNo: data.userNo
+            unitPrice,
+            totalPrice,
+            discountAmount: 0,
+            finalPrice: totalPrice,
           });
           await queryRunner.manager.save(orderItem);
         }
@@ -129,12 +140,14 @@ export class OrderService {
 
       // 4. 核销优惠券
       if (data.couponId) {
-        await this.couponService.useCoupon({ couponId: data.couponId, orderNo: savedOrder.no });
+        await this.couponService.useCoupon({
+          couponId: data.couponId,
+          orderNo: savedOrder.no,
+        });
       }
 
       await queryRunner.commitTransaction();
       return savedOrder;
-
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;

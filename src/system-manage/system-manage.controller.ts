@@ -12,7 +12,12 @@ export class SystemManageController {
   @ApiOperation({ summary: '获取角色列表' })
   async getRoleList(@Query() query) {
     const { page, pageSize, keyword, status } = query;
-    return this.systemManageService.getRoleList(Number(page) || 1, Number(pageSize) || 10, keyword, status);
+    return this.systemManageService.getRoleList(
+      Number(page) || 1,
+      Number(pageSize) || 10,
+      keyword,
+      status,
+    );
   }
 
   @Get('getAllRoles')
@@ -30,13 +35,20 @@ export class SystemManageController {
   @Post('updateUserRole')
   @ApiOperation({ summary: '更新用户角色' })
   async updateUserRole(@Body() body: { userId: string; roleCodes: string[] }) {
-    return this.systemManageService.updateUserRoles(body.userId, body.roleCodes);
+    return this.systemManageService.updateUserRoles(
+      body.userId,
+      body.roleCodes,
+    );
   }
 
   @Get('getUserList')
   @ApiOperation({ summary: '获取用户列表' })
   async getUserList(@Query() query) {
     const { page, pageSize, keyword } = query;
-    return this.systemManageService.getUserList(Number(page) || 1, Number(pageSize) || 10, keyword);
+    return this.systemManageService.getUserList(
+      Number(page) || 1,
+      Number(pageSize) || 10,
+      keyword,
+    );
   }
 }

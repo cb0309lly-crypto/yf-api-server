@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto, UpdatePaymentDto, PaymentQueryDto, PaymentIdDto } from './dto';
+import {
+  CreatePaymentDto,
+  UpdatePaymentDto,
+  PaymentQueryDto,
+  PaymentIdDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('支付管理')

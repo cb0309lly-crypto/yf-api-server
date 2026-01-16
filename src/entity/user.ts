@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { Base } from './base';
 import { Cart } from './cart';
 import { Order } from './order';
@@ -7,6 +7,7 @@ import { Review } from './review';
 import { Coupon } from './coupon';
 import { Wishlist } from './wishlist';
 import { Notification } from './notification';
+import { Role } from './role';
 
 export enum Gender {
   FEMALE,

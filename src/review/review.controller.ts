@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { ReviewService } from './review.service';
-import { CreateReviewDto, UpdateReviewDto, ReviewQueryDto, ReviewIdDto } from './dto';
+import {
+  CreateReviewDto,
+  UpdateReviewDto,
+  ReviewQueryDto,
+  ReviewIdDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('评价管理')
@@ -41,7 +55,10 @@ export class ReviewController {
 
   @Get('product/:productId')
   @ApiOperation({ summary: '获取商品评价' })
-  getProductReviews(@Param('productId') productId: string, @Query() query: any) {
+  getProductReviews(
+    @Param('productId') productId: string,
+    @Query() query: any,
+  ) {
     return this.reviewService.getProductReviews(productId, query);
   }
 

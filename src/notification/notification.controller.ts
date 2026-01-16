@@ -1,6 +1,19 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { CreateNotificationDto, NotificationQueryDto, NotificationIdDto } from './dto';
+import {
+  CreateNotificationDto,
+  NotificationQueryDto,
+  NotificationIdDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('通知管理')

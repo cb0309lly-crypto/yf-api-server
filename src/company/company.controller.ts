@@ -1,7 +1,12 @@
 import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { Company } from '../entity/company';
-import { CreateCompanyDto, UpdateCompanyDto, QueryCompanyDto, CompanyIdDto } from './dto';
+import {
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  QueryCompanyDto,
+  CompanyIdDto,
+} from './dto';
 import { PaginationResult } from '../common/utils/pagination.util';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -25,9 +30,32 @@ export class CompanyController {
 
   @Get('/list')
   @ApiOperation({ summary: '获取公司列表' })
-  async findAll(@Query() queryCompanyDto: QueryCompanyDto): Promise<PaginationResult<Company>> {
-    const { page = 1, pageSize = 10, keyword, name, description, address, taxId, phoneNumber, email, creator } = queryCompanyDto;
-    return this.companyService.findAllPaged(page, pageSize, keyword || name, description, address, taxId, phoneNumber, email, creator);
+  async findAll(
+    @Query() queryCompanyDto: QueryCompanyDto,
+  ): Promise<PaginationResult<Company>> {
+    const {
+      page = 1,
+      pageSize = 10,
+      keyword,
+      name,
+      description,
+      address,
+      taxId,
+      phoneNumber,
+      email,
+      creator,
+    } = queryCompanyDto;
+    return this.companyService.findAllPaged(
+      page,
+      pageSize,
+      keyword || name,
+      description,
+      address,
+      taxId,
+      phoneNumber,
+      email,
+      creator,
+    );
   }
 
   @Get('/:id')

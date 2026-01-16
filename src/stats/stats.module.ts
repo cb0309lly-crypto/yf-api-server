@@ -8,11 +8,8 @@ import { Product } from '../entity/product';
 import { Payment } from '../entity/payment';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, Order, Product, Payment]),
-  ],
+  imports: [TypeOrmModule.forFeature([User, Order, Product, Payment])],
   controllers: [StatsController],
   providers: [StatsService],
 })
 export class StatsModule {}
-
