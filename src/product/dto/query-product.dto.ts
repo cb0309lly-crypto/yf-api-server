@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max, IsEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+  IsEmpty,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ProductStatus } from '../../entity/product';
 
@@ -25,7 +33,7 @@ export class QueryProductDto {
   categoryNo?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(ProductStatus, { message: '商品状态值不正确' })
   status?: ProductStatus;
 
@@ -36,4 +44,4 @@ export class QueryProductDto {
   @IsOptional()
   @IsString({ message: '商品名称必须是字符串' })
   name?: string;
-} 
+}

@@ -63,4 +63,4 @@ describe('CreateProductDto', () => {
     const errors = await validate(dto);
     expect(errors.length).toBe(0);
   });
-}); 
+});

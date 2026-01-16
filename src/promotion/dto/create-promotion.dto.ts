@@ -1,4 +1,13 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max, IsDateString, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
 import { PromotionType, PromotionStatus } from '../../entity/promotion';
 
 export class CreatePromotionDto {
@@ -38,4 +47,4 @@ export class CreatePromotionDto {
   @IsOptional()
   @IsString({ message: '适用分类必须是字符串' })
   applicableCategories?: string;
-} 
+}

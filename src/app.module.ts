@@ -25,6 +25,11 @@ import { RedisModule } from './redis/redis.module';
 import { StatsModule } from './stats/stats.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './user/jwt-auth.guard';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { UploadModule } from './upload/upload.module';
+import { join } from 'path';
+
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -40,11 +45,18 @@ import { JwtAuthGuard } from './user/jwt-auth.guard';
       // logging: true,
       entities: [__dirname + '/entity/*{.ts,.js}'],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
+    ScheduleModule.forRoot(),
+    UploadModule,
     UserModule,
     OrderModule,
     LogisticsModule,
     ProductModule,
     SystemModule,
+    SystemManageModule,
     ReceiverModule,
     CompanyModule,
     // 新增模块
@@ -60,6 +72,7 @@ import { JwtAuthGuard } from './user/jwt-auth.guard';
     NotificationModule,
     RedisModule,
     StatsModule,
+    RefundModule,
   ],
   controllers: [AppController],
   providers: [AppService,

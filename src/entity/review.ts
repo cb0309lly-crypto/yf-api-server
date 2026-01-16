@@ -8,7 +8,7 @@ export enum ReviewStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  HIDDEN = 'hidden'
+  HIDDEN = 'hidden',
 }
 
 @Entity('yf_db_review')
@@ -52,15 +52,15 @@ export class Review extends Base {
   @Column({ name: 'reply_time', nullable: true })
   replyTime: Date;
 
-  @ManyToOne(() => User, user => user.reviews)
+  @ManyToOne(() => User, (user) => user.reviews)
   @JoinColumn({ name: 'user_no' })
   user: User;
 
-  @ManyToOne(() => Product, product => product.reviews)
+  @ManyToOne(() => Product, (product) => product.reviews)
   @JoinColumn({ name: 'product_no' })
   product: Product;
 
-  @ManyToOne(() => Order, order => order.reviews)
+  @ManyToOne(() => Order, (order) => order.reviews)
   @JoinColumn({ name: 'order_no' })
   order: Order;
-} 
+}

@@ -54,7 +54,7 @@ export class WishlistService {
 
   getUserWishlist(userId: string, query) {
     const { page = 1, limit = 10 } = query;
-    
+
     const queryBuilder = this.wishlistRepository.createQueryBuilder('wishlist');
 
     queryBuilder.andWhere('wishlist.userNo = :userId', { userId });
@@ -69,22 +69,24 @@ export class WishlistService {
 
   addToWishlist(body) {
     const { userNo, productNo } = body;
-    
+
     // 检查是否已存在
-    return this.wishlistRepository.findOne({
-      where: { userNo, productNo },
-    }).then(existingItem => {
-      if (existingItem) {
-        return existingItem;
-      } else {
-        const wishlistItem = this.wishlistRepository.create({
-          userNo,
-          productNo,
-          addedAt: new Date(),
-        });
-        return this.wishlistRepository.save(wishlistItem);
-      }
-    });
+    return this.wishlistRepository
+      .findOne({
+        where: { userNo, productNo },
+      })
+      .then((existingItem) => {
+        if (existingItem) {
+          return existingItem;
+        } else {
+          const wishlistItem = this.wishlistRepository.create({
+            userNo,
+            productNo,
+            addedAt: new Date(),
+          });
+          return this.wishlistRepository.save(wishlistItem);
+        }
+      });
   }
 
   removeFromWishlist(body) {
@@ -98,10 +100,12 @@ export class WishlistService {
 
   checkInWishlist(body) {
     const { userNo, productNo } = body;
-    return this.wishlistRepository.findOne({
-      where: { userNo, productNo },
-    }).then(item => {
-      return { inWishlist: !!item };
-    });
+    return this.wishlistRepository
+      .findOne({
+        where: { userNo, productNo },
+      })
+      .then((item) => {
+        return { inWishlist: !!item };
+      });
   }
-} 
+}

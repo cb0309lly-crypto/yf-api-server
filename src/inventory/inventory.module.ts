@@ -10,4 +10,4 @@ import { Inventory } from '../entity/inventory';
   providers: [InventoryService],
   exports: [InventoryService],
 })
-export class InventoryModule {} 
+export class InventoryModule {}

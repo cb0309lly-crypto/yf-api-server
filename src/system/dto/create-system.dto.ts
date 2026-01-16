@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsEnum, Length, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  Length,
+  MaxLength,
+} from 'class-validator';
 import { SystemStatus } from '../../entity/system';
 
 export class CreateSystemDto {

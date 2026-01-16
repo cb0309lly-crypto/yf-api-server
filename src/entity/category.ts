@@ -4,7 +4,7 @@ import { Product } from './product';
 
 export enum CategoryStatus {
   ACTIVE = 'active',
-  INACTIVE = 'inactive'
+  INACTIVE = 'inactive',
 }
 
 @Entity('yf_db_category')
@@ -15,7 +15,11 @@ export class Category extends Base {
   @Column({ nullable: true })
   icon: string;
 
-  @Column({ type: 'enum', enum: CategoryStatus, default: CategoryStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: CategoryStatus,
+    default: CategoryStatus.ACTIVE,
+  })
   status: CategoryStatus;
 
   @Column({ name: 'parent_id', nullable: true })
@@ -27,6 +31,6 @@ export class Category extends Base {
   @Column({ name: 'category_level', type: 'int', default: 1 })
   categoryLevel: number;
 
-  @OneToMany(() => Product, product => product.category)
+  @OneToMany(() => Product, (product) => product.category)
   products: Product[];
-} 
+}

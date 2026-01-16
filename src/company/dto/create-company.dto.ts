@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEmail, IsPhoneNumber, Length, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsPhoneNumber,
+  Length,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateCompanyDto {
   @IsString({ message: '公司名称必须是字符串' })

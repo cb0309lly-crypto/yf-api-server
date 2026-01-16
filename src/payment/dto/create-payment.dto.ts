@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { PaymentMethod, PaymentStatus } from '../../entity/payment';
 
 export class CreatePaymentDto {
@@ -30,4 +37,4 @@ export class CreatePaymentDto {
 
   @IsOptional()
   failureReason?: string;
-} 
+}

@@ -16,7 +16,7 @@ export class SystemService {
   }
 
   async updateSystem(data: Partial<System>): Promise<System | null> {
-    this.systemRepository.update({ no: data.no }, { ...data })
+    this.systemRepository.update({ no: data.no }, { ...data });
     return this.systemRepository.save(data);
   }
 
@@ -36,14 +36,14 @@ export class SystemService {
     materialNo?: string,
     device?: string,
     operatorNo?: string,
-    status?: SystemStatus
+    status?: SystemStatus,
   ): Promise<PaginationResult<System>> {
     const qb = this.systemRepository.createQueryBuilder('system');
-    
+
     if (keyword) {
       qb.andWhere(
         '(system.name LIKE :keyword OR system.version LIKE :keyword OR system.materialNo LIKE :keyword OR system.device LIKE :keyword OR system.operatorNo LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
     if (version) {
@@ -61,9 +61,9 @@ export class SystemService {
     if (status) {
       qb.andWhere('system.status = :status', { status });
     }
-    
+
     qb.orderBy('system.createdAt', 'DESC');
-    
+
     return paginate(qb, page, pageSize);
   }
 }

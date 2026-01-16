@@ -17,7 +17,8 @@ export class OrderItemService {
 
   findAll(query) {
     const { page = 1, limit = 10, orderNo, status } = query;
-    const queryBuilder = this.orderItemRepository.createQueryBuilder('orderItem');
+    const queryBuilder =
+      this.orderItemRepository.createQueryBuilder('orderItem');
 
     if (orderNo) {
       queryBuilder.andWhere('orderItem.orderNo = :orderNo', { orderNo });
@@ -61,7 +62,7 @@ export class OrderItemService {
 
   async createBatch(body, userNo: string) {
     const { orderItems } = body;
-    
+
     if (!Array.isArray(orderItems) || orderItems.length === 0) {
       throw new Error('订单项列表不能为空');
     }
@@ -91,7 +92,7 @@ export class OrderItemService {
     return {
       success: true,
       count: result.identifiers.length,
-      message: `成功插入 ${result.identifiers.length} 条订单项`
+      message: `成功插入 ${result.identifiers.length} 条订单项`,
     };
   }
-} 
+}

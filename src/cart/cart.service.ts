@@ -70,7 +70,7 @@ export class CartService {
     return {
       items: cartItems,
       totalPrice: totalPrice,
-      itemCount: cartItems.length
+      itemCount: cartItems.length,
     };
   }
 
@@ -79,34 +79,36 @@ export class CartService {
     if (value === null || value === undefined) {
       return 0;
     }
-    
+
     if (typeof value === 'number') {
       return value;
     }
-    
+
     if (typeof value === 'string') {
       const parsed = parseFloat(value);
       return isNaN(parsed) ? 0 : parsed;
     }
-    
+
     return 0;
   }
 
   async addToCart(body) {
     const { userNo, productNo, quantity = 1 } = body;
-    
+
     // 获取商品信息
-    const product = await this.productRepository.findOne({ where: { no: productNo } });
-    
+    const product = await this.productRepository.findOne({
+      where: { no: productNo },
+    });
+
     if (!product) {
       throw new Error('商品不存在');
     }
-    
+
     // 检查是否已存在
     const existingItem = await this.cartRepository.findOne({
       where: { userNo, productNo, status: CartItemStatus.ACTIVE },
     });
-    
+
     if (existingItem) {
       // 更新数量
       existingItem.quantity += quantity;
@@ -123,7 +125,7 @@ export class CartService {
         unitPrice: productPrice,
         totalPrice: productPrice * quantity,
         addedAt: new Date(),
-        name: `cart-${userNo}-${Date.now().toString()}`
+        name: `cart-${userNo}-${Date.now().toString()}`,
       });
       return this.cartRepository.save(cartItem);
     }
@@ -133,20 +135,20 @@ export class CartService {
     const { userNo, productNo } = body;
     return this.cartRepository.update(
       { userNo, productNo, status: CartItemStatus.ACTIVE },
-      { status: CartItemStatus.REMOVED }
+      { status: CartItemStatus.REMOVED },
     );
   }
 
   clearCart(userNo: string) {
     return this.cartRepository.update(
       { userNo, status: CartItemStatus.ACTIVE },
-      { status: CartItemStatus.REMOVED }
+      { status: CartItemStatus.REMOVED },
     );
   }
 
   updateQuantity(body) {
     const { id, quantity } = body;
-    return this.cartRepository.findOne({ where: { no: id } }).then(item => {
+    return this.cartRepository.findOne({ where: { no: id } }).then((item) => {
       if (item) {
         item.quantity = quantity;
         const unitPrice = this.parseNumber(item.unitPrice);
@@ -155,4 +157,4 @@ export class CartService {
       }
     });
   }
-} 
+}

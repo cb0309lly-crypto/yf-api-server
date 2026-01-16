@@ -10,4 +10,4 @@ import { Promotion } from '../entity/promotion';
   providers: [PromotionService],
   exports: [PromotionService],
 })
-export class PromotionModule {} 
+export class PromotionModule {}

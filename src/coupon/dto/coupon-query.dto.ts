@@ -30,4 +30,4 @@ export class CouponQueryDto {
   @IsOptional()
   @IsString({ message: '优惠券代码必须是字符串' })
   code?: string;
-} 
+}

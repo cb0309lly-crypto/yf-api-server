@@ -26,4 +26,4 @@ export class UserQueryDto {
   @IsOptional()
   @IsString({ message: '用户状态必须是字符串' })
   status?: string;
-} 
+}

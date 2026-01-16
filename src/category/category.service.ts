@@ -60,7 +60,7 @@ export class CategoryService {
 
   getCategoryProducts(id: string, query) {
     const { page = 1, limit = 10 } = query;
-    
+
     const queryBuilder = this.categoryRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.products', 'product')
@@ -72,4 +72,4 @@ export class CategoryService {
 
     return queryBuilder.getMany();
   }
-} 
+}

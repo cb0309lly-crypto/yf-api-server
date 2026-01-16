@@ -12,4 +12,4 @@ export class WxLoginDto {
   @IsOptional()
   @IsString({ message: '头像URL必须是字符串' })
   avatar?: string;
-} 
+}

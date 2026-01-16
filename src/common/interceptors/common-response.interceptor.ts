@@ -18,4 +18,4 @@ export class CommonResponseInterceptor implements NestInterceptor {
       })),
     );
   }
-} 
+}

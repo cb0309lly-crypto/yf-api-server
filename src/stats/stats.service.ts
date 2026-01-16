@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { User } from '../entity/user';
-import { Order } from '../entity/order';
+import { Order, OrderStatus } from '../entity/order';
 import { Product } from '../entity/product';
 import { Payment } from '../entity/payment';
 
@@ -22,20 +22,69 @@ export class StatsService {
   async getCardData() {
     const userCount = await this.userRepository.count();
     const orderCount = await this.orderRepository.count();
-    const productCount = await this.productRepository.count();
     
-    // 计算总交易额
-    const payments = await this.paymentRepository.find({
-      where: { status: 'success' as any },
+    // Calculate GMV (Total successful payment amount)
+    const { totalTurnover } = await this.paymentRepository
+      .createQueryBuilder('payment')
+      .select('SUM(payment.amount)', 'totalTurnover')
+      .where('payment.status = :status', { status: 'success' })
+      .getRawOne();
+
+    // Use order count as deal count for now, or filter by 'completed' status
+    const dealCount = await this.orderRepository.count({
+      where: [
+        { orderStatus: OrderStatus.PAIED },
+        { orderStatus: OrderStatus.DELIVERY },
+        // Add COMPLETED status if available
+      ]
     });
-    const totalTurnover = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
     return {
-      visitCount: userCount * 12, // 模拟访问量
-      turnover: totalTurnover,
-      downloadCount: productCount * 5, // 模拟下载量
-      dealCount: orderCount,
+      visitCount: userCount, // Using user count as a proxy for visit count
+      turnover: Number(totalTurnover) || 0,
+      downloadCount: await this.productRepository.count(), // Using product count as proxy
+      dealCount: dealCount || orderCount, // Fallback to total orders if status not matching
     };
+  }
+
+  async getLineChartData() {
+    // Get last 7 days order count trend
+    const today = new Date();
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const orders = await this.orderRepository
+      .createQueryBuilder('order')
+      .select("TO_CHAR(order.created_at, 'YYYY-MM-DD')", 'date')
+      .addSelect('COUNT(*)', 'count')
+      .where('order.created_at >= :startDate', { startDate: sevenDaysAgo })
+      .groupBy('date')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    // Fill missing dates with 0 (simplified for now, just returning raw data)
+    // Note: TO_CHAR is PostgreSQL specific. For MySQL use DATE_FORMAT(order.created_at, '%Y-%m-%d')
+    // Assuming PostgreSQL based on app.module.ts config
+    
+    return orders;
+  }
+
+  async getPieChartData() {
+    // Get product category distribution (simplified: using hardcoded categories or grouping by product type if available)
+    // Since we don't have category relation in product easily accessible or data might be sparse:
+    // We mock this based on real counts if possible, or just return static structure for now until Category-Product relation is robust.
+    
+    // Let's count orders by status for the pie chart
+    const statusCounts = await this.orderRepository
+      .createQueryBuilder('order')
+      .select('order.order_status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('status')
+      .getRawMany();
+
+    return statusCounts.map(item => ({
+      name: item.status,
+      value: Number(item.count)
+    }));
   }
 }
 

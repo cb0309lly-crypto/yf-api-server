@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsUrl, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsUrl,
+  Min,
+  Max,
+} from 'class-validator';
 import { ProductStatus } from '../../entity/product';
 
 export class UpdateProductDto {
@@ -50,4 +58,4 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString({ message: '订单编号必须是字符串' })
   orderNo?: string;
-} 
+}

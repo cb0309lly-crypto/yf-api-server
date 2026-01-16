@@ -1,4 +1,14 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max, IsArray, IsBoolean, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+} from 'class-validator';
 import { CouponType, CouponStatus } from '../../entity/coupon';
 
 export class UpdateCouponDto {
@@ -58,4 +68,4 @@ export class UpdateCouponDto {
   @IsOptional()
   @IsBoolean({ message: '是否全局优惠券必须是布尔值' })
   isGlobal?: boolean;
-} 
+}

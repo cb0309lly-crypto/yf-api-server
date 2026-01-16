@@ -1,5 +1,6 @@
 export const redisConfig = {
-  host: process.env.REDIS_HOST || 'r-bp1ixn3gbvaaqoxs2ppd.redis.rds.aliyuncs.com',
+  host:
+    process.env.REDIS_HOST || 'r-bp1ixn3gbvaaqoxs2ppd.redis.rds.aliyuncs.com',
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
   username: process.env.REDIS_USERNAME || 'yf_redis',
   password: process.env.REDIS_PASSWORD || 'Yf@123456',

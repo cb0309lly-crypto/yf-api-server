@@ -18,7 +18,8 @@ export class InventoryService {
 
   findAll(query) {
     const { page = 1, limit = 10, status, productNo } = query;
-    const queryBuilder = this.inventoryRepository.createQueryBuilder('inventory');
+    const queryBuilder =
+      this.inventoryRepository.createQueryBuilder('inventory');
 
     if (status) {
       queryBuilder.andWhere('inventory.status = :status', { status });
@@ -44,21 +45,23 @@ export class InventoryService {
     location?: string,
     status?: InventoryStatus,
     minQuantity?: number,
-    maxQuantity?: number
+    maxQuantity?: number,
   ): Promise<PaginationResult<Inventory>> {
     const qb = this.inventoryRepository.createQueryBuilder('inventory');
-    
+
     if (keyword) {
       qb.andWhere(
         '(inventory.productNo LIKE :keyword OR inventory.warehouseLocation LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
     if (productNo) {
       qb.andWhere('inventory.productNo = :productNo', { productNo });
     }
     if (location) {
-      qb.andWhere('inventory.warehouseLocation LIKE :location', { location: `%${location}%` });
+      qb.andWhere('inventory.warehouseLocation LIKE :location', {
+        location: `%${location}%`,
+      });
     }
     if (status) {
       qb.andWhere('inventory.status = :status', { status });
@@ -69,9 +72,9 @@ export class InventoryService {
     if (maxQuantity !== undefined) {
       qb.andWhere('inventory.quantity <= :maxQuantity', { maxQuantity });
     }
-    
+
     qb.orderBy('inventory.createdAt', 'DESC');
-    
+
     return paginate(qb, page, pageSize);
   }
 
@@ -127,7 +130,9 @@ export class InventoryService {
       .createQueryBuilder('inventory')
       .leftJoinAndSelect('inventory.product', 'product')
       .where('inventory.quantity <= inventory.minStockLevel')
-      .andWhere('inventory.status = :status', { status: InventoryStatus.IN_STOCK })
+      .andWhere('inventory.status = :status', {
+        status: InventoryStatus.IN_STOCK,
+      })
       .getMany();
   }
-} 
+}

@@ -9,4 +9,4 @@ export class UpdateQuantityDto {
   @Min(1, { message: '数量不能小于1' })
   @Max(999, { message: '数量不能超过999' })
   quantity: number;
-} 
+}

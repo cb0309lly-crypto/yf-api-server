@@ -26,4 +26,4 @@ export class NotificationQueryDto {
   @IsOptional()
   @IsString({ message: '通知状态必须是字符串' })
   status?: string;
-} 
+}

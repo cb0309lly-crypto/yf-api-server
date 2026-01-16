@@ -38,18 +38,20 @@ export class ReceiverService {
     email?: string,
     groupBy?: number,
     description?: string,
-    userNo?: string
+    userNo?: string,
   ): Promise<PaginationResult<Receiver>> {
     const qb = this.receiverRepository.createQueryBuilder('receiver');
-    
+
     if (keyword) {
       qb.andWhere(
         '(receiver.name LIKE :keyword OR receiver.address LIKE :keyword OR receiver.phone LIKE :keyword OR receiver.email LIKE :keyword OR receiver.description LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
     if (address) {
-      qb.andWhere('receiver.address LIKE :address', { address: `%${address}%` });
+      qb.andWhere('receiver.address LIKE :address', {
+        address: `%${address}%`,
+      });
     }
     if (phone) {
       qb.andWhere('receiver.phone = :phone', { phone });
@@ -61,14 +63,16 @@ export class ReceiverService {
       qb.andWhere('receiver.groupBy = :groupBy', { groupBy });
     }
     if (description) {
-      qb.andWhere('receiver.description LIKE :description', { description: `%${description}%` });
+      qb.andWhere('receiver.description LIKE :description', {
+        description: `%${description}%`,
+      });
     }
     if (userNo) {
       qb.andWhere('receiver.userNo = :userNo', { userNo });
     }
-    
+
     qb.orderBy('receiver.createdAt', 'DESC');
-    
+
     return paginate(qb, page, pageSize);
   }
 }

@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, Min, Max, IsEmail } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  IsEmail,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export class QueryCompanyDto {

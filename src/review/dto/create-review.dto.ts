@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+  IsArray,
+} from 'class-validator';
 import { ReviewStatus } from '../../entity/review';
 
 export class CreateReviewDto {
@@ -35,4 +43,4 @@ export class CreateReviewDto {
   @IsOptional()
   @IsArray({ message: '图片必须是数组' })
   images?: string[];
-} 
+}

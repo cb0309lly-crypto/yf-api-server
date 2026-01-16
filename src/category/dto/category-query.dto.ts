@@ -26,4 +26,4 @@ export class CategoryQueryDto {
   @IsOptional()
   @IsString({ message: '分类状态必须是字符串' })
   status?: string;
-} 
+}

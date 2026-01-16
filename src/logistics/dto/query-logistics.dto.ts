@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+  IsDateString,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { LogisticsCurrentStatus } from '../../entity/logistics';
 
@@ -33,7 +41,7 @@ export class QueryLogisticsDto {
   orderNo?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(LogisticsCurrentStatus, { message: '物流状态值不正确' })
   currentStatus?: LogisticsCurrentStatus;
 

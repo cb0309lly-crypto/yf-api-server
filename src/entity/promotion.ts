@@ -6,7 +6,7 @@ export enum PromotionType {
   BUY_ONE_GET_ONE = 'buy_one_get_one',
   FLASH_SALE = 'flash_sale',
   BUNDLE = 'bundle',
-  FREE_SHIPPING = 'free_shipping'
+  FREE_SHIPPING = 'free_shipping',
 }
 
 export enum PromotionStatus {
@@ -14,7 +14,7 @@ export enum PromotionStatus {
   ACTIVE = 'active',
   PAUSED = 'paused',
   ENDED = 'ended',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 @Entity('yf_db_promotion')
@@ -30,7 +30,11 @@ export class Promotion extends Base {
   })
   discountValue: number;
 
-  @Column({ type: 'enum', enum: PromotionStatus, default: PromotionStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: PromotionStatus,
+    default: PromotionStatus.DRAFT,
+  })
   status: PromotionStatus;
 
   @Column({ name: 'start_date' })
@@ -51,10 +55,22 @@ export class Promotion extends Base {
   @Column({ name: 'applicable_categories', type: 'json', nullable: true })
   applicableCategories: string[];
 
-  @Column({ name: 'minimum_amount', type: 'decimal', precision: 10, scale: 2, default: 0.0 })
+  @Column({
+    name: 'minimum_amount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+  })
   minimumAmount: number;
 
-  @Column({ name: 'maximum_discount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'maximum_discount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   maximumDiscount: number;
 
   @Column({ name: 'usage_limit_per_user', type: 'int', default: 1 })
@@ -71,4 +87,4 @@ export class Promotion extends Base {
 
   @Column({ name: 'priority', type: 'int', default: 0 })
   priority: number;
-} 
+}

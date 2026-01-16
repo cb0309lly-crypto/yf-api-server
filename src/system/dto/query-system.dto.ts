@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { SystemStatus } from '../../entity/system';
 
@@ -37,7 +44,7 @@ export class QuerySystemDto {
   operatorNo?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(SystemStatus, { message: '系统状态值不正确' })
   status?: SystemStatus;
 

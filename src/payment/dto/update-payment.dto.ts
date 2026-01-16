@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { PaymentMethod, PaymentStatus } from '../../entity/payment';
 
 export class UpdatePaymentDto {
@@ -36,4 +43,4 @@ export class UpdatePaymentDto {
   @Min(0, { message: '退款金额不能小于0' })
   @Max(999999.99, { message: '退款金额不能超过999999.99' })
   refundAmount?: number;
-} 
+}

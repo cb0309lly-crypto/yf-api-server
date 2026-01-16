@@ -16,7 +16,9 @@ export class UserService {
 
   // 注册新用户
   async register(body: any) {
-    const exist = await this.userRepository.findOne({ where: { phone: body.phone } });
+    const exist = await this.userRepository.findOne({
+      where: { phone: body.phone },
+    });
     if (exist) {
       return null;
     }
@@ -41,7 +43,7 @@ export class UserService {
     if (!user) {
       return null;
     }
-    
+
     const payload = {
       sub: user.no,
       no: user.no,
@@ -52,20 +54,24 @@ export class UserService {
       address: user.address,
       description: user.description,
     };
-    
+
     const access_token = this.jwtService.sign(payload);
-    
+
     // 将token缓存到Redis，设置7天过期时间
-    await this.redisService.set(`token:${user.no}`, {
-      token: access_token,
-      user: payload,
-      loginTime: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7天后
-    }, 7 * 24 * 60 * 60); // 7天 = 604800秒
-    
+    await this.redisService.set(
+      `token:${user.no}`,
+      {
+        token: access_token,
+        user: payload,
+        loginTime: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7天后
+      },
+      7 * 24 * 60 * 60,
+    ); // 7天 = 604800秒
+
     // 将用户信息也缓存到Redis，方便快速获取
     await this.redisService.set(`user:${user.no}`, payload, 7 * 24 * 60 * 60);
-    
+
     return {
       access_token,
       user: payload,
@@ -74,8 +80,10 @@ export class UserService {
 
   // 校验用户（密码加密比对）
   async validateUser(username: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { authLogin: username } });
-    if (user && await bcrypt.compare(password, user.authPassword)) {
+    const user = await this.userRepository.findOne({
+      where: { authLogin: username },
+    });
+    if (user && (await bcrypt.compare(password, user.authPassword))) {
       return user;
     }
     return null;
@@ -87,7 +95,11 @@ export class UserService {
   }
 
   // 注册微信用户
-  async registerWxUser(data: { openId: string, nickname?: string, avatar?: string }) {
+  async registerWxUser(data: {
+    openId: string;
+    nickname?: string;
+    avatar?: string;
+  }) {
     const user = this.userRepository.create({
       openId: data.openId,
       nickname: data.nickname,
@@ -105,20 +117,24 @@ export class UserService {
       avatar: user.avatar,
       openId: user.openId,
     };
-    
+
     const access_token = this.jwtService.sign(payload);
-    
+
     // 将token缓存到Redis
-    await this.redisService.set(`token:${user.no}`, {
-      token: access_token,
-      user: payload,
-      loginTime: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    }, 7 * 24 * 60 * 60);
-    
+    await this.redisService.set(
+      `token:${user.no}`,
+      {
+        token: access_token,
+        user: payload,
+        loginTime: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      7 * 24 * 60 * 60,
+    );
+
     // 缓存用户信息
     await this.redisService.set(`user:${user.no}`, payload, 7 * 24 * 60 * 60);
-    
+
     return {
       access_token,
       user: payload,
@@ -126,13 +142,16 @@ export class UserService {
   }
 
   // 验证token是否在Redis中存在且有效
-  async validateTokenFromRedis(userNo: string, token: string): Promise<boolean> {
+  async validateTokenFromRedis(
+    userNo: string,
+    token: string,
+  ): Promise<boolean> {
     try {
       const cachedToken = await this.redisService.get(`token:${userNo}`);
       if (!cachedToken) {
         return false;
       }
-      
+
       // 检查token是否匹配
       return cachedToken.token === token;
     } catch (error) {
@@ -172,14 +191,20 @@ export class UserService {
 
       // 生成新的token
       const newToken = this.jwtService.sign(userInfo);
-      
+
       // 更新Redis中的token
-      await this.redisService.set(`token:${userNo}`, {
-        token: newToken,
-        user: userInfo,
-        loginTime: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      }, 7 * 24 * 60 * 60);
+      await this.redisService.set(
+        `token:${userNo}`,
+        {
+          token: newToken,
+          user: userInfo,
+          loginTime: new Date().toISOString(),
+          expiresAt: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+        7 * 24 * 60 * 60,
+      );
 
       return {
         access_token: newToken,
@@ -205,25 +230,25 @@ export class UserService {
   // 分页查询用户列表
   async findAllPaged(page = 1, pageSize = 10, keyword?: string) {
     const qb = this.userRepository.createQueryBuilder('user');
-    
+
     if (keyword) {
       qb.andWhere(
         '(user.nickname LIKE :keyword OR user.phone LIKE :keyword OR user.authLogin LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
-    
+
     qb.orderBy('user.createdAt', 'DESC');
-    
+
     const skip = (page - 1) * pageSize;
     const [users, total] = await qb.skip(skip).take(pageSize).getManyAndCount();
-    
+
     return {
       list: users,
       total,
       page,
       pageSize,
-      totalPages: Math.ceil(total / pageSize)
+      totalPages: Math.ceil(total / pageSize),
     };
   }
 }

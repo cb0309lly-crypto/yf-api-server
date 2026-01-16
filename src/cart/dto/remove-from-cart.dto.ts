@@ -8,4 +8,4 @@ export class RemoveFromCartDto {
   @IsString({ message: '商品编号不能为空' })
   @IsNotEmpty({ message: '商品编号不能为空' })
   productNo: string;
-} 
+}

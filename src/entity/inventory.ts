@@ -6,7 +6,7 @@ export enum InventoryStatus {
   IN_STOCK = 'in_stock',
   LOW_STOCK = 'low_stock',
   OUT_OF_STOCK = 'out_of_stock',
-  RESERVED = 'reserved'
+  RESERVED = 'reserved',
 }
 
 @Entity('yf_db_inventory')
@@ -29,7 +29,11 @@ export class Inventory extends Base {
   @Column({ type: 'int', default: 100 })
   maxStockLevel: number;
 
-  @Column({ type: 'enum', enum: InventoryStatus, default: InventoryStatus.IN_STOCK })
+  @Column({
+    type: 'enum',
+    enum: InventoryStatus,
+    default: InventoryStatus.IN_STOCK,
+  })
   status: InventoryStatus;
 
   @Column({ name: 'warehouse_location', nullable: true })
@@ -41,7 +45,7 @@ export class Inventory extends Base {
   @Column({ name: 'next_restock_date', nullable: true })
   nextRestockDate: Date;
 
-  @ManyToOne(() => Product, product => product.inventories)
+  @ManyToOne(() => Product, (product) => product.inventories)
   @JoinColumn({ name: 'product_no' })
   product: Product;
-} 
+}

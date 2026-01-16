@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { CartItemStatus } from '../../entity/cart';
 
 export class UpdateCartDto {
@@ -29,4 +36,4 @@ export class UpdateCartDto {
 
   @IsOptional()
   selected?: boolean;
-} 
+}

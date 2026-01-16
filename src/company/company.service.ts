@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from '../entity/company';
@@ -23,7 +27,9 @@ export class CompanyService {
     if (!data.no) {
       throw new BadRequestException('缺少公司主键no');
     }
-    const company = await this.companyRepository.findOne({ where: { no: data.no } });
+    const company = await this.companyRepository.findOne({
+      where: { no: data.no },
+    });
     if (!company) {
       throw new NotFoundException('公司不存在');
     }
@@ -44,26 +50,28 @@ export class CompanyService {
   }
 
   async findAllPaged(
-    page = 1, 
-    pageSize = 10, 
-    keyword?: string, 
-    description?: string, 
-    address?: string, 
-    taxId?: string, 
-    phoneNumber?: string, 
-    email?: string, 
-    creator?: string
+    page = 1,
+    pageSize = 10,
+    keyword?: string,
+    description?: string,
+    address?: string,
+    taxId?: string,
+    phoneNumber?: string,
+    email?: string,
+    creator?: string,
   ): Promise<PaginationResult<Company>> {
     const qb = this.companyRepository.createQueryBuilder('company');
-    
+
     if (keyword) {
       qb.andWhere(
         '(company.name LIKE :keyword OR company.description LIKE :keyword OR company.address LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
     if (description) {
-      qb.andWhere('company.description LIKE :description', { description: `%${description}%` });
+      qb.andWhere('company.description LIKE :description', {
+        description: `%${description}%`,
+      });
     }
     if (address) {
       qb.andWhere('company.address LIKE :address', { address: `%${address}%` });
@@ -80,7 +88,7 @@ export class CompanyService {
     if (creator) {
       qb.andWhere('company.creator = :creator', { creator });
     }
-    
+
     return paginate(qb, page, pageSize);
   }
 

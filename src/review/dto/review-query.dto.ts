@@ -37,4 +37,4 @@ export class ReviewQueryDto {
   @Min(1, { message: '评分不能小于1' })
   @Max(5, { message: '评分不能超过5' })
   rating?: number;
-} 
+}

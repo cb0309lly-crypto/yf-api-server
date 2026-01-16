@@ -65,7 +65,12 @@ export class ReviewService {
   }
 
   getProductReviews(productId: string, query) {
-    const { page = 1, limit = 10, rating, status = ReviewStatus.APPROVED } = query;
+    const {
+      page = 1,
+      limit = 10,
+      rating,
+      status = ReviewStatus.APPROVED,
+    } = query;
     const queryBuilder = this.reviewRepository.createQueryBuilder('review');
 
     queryBuilder.andWhere('review.productNo = :productId', { productId });
@@ -121,4 +126,4 @@ export class ReviewService {
       replyTime: new Date(),
     });
   }
-} 
+}

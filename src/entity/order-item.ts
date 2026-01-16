@@ -9,7 +9,7 @@ export enum OrderItemStatus {
   SHIPPED = 'shipped',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 
 @Entity('yf_db_order_item')
@@ -55,7 +55,11 @@ export class OrderItem extends Base {
   })
   finalPrice: number;
 
-  @Column({ type: 'enum', enum: OrderItemStatus, default: OrderItemStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: OrderItemStatus,
+    default: OrderItemStatus.PENDING,
+  })
   status: OrderItemStatus;
 
   @Column({ nullable: true })
@@ -64,11 +68,11 @@ export class OrderItem extends Base {
   @Column({ name: 'product_snapshot', type: 'json', nullable: true })
   productSnapshot: any;
 
-  @ManyToOne(() => Order, order => order.orderItems)
+  @ManyToOne(() => Order, (order) => order.orderItems)
   @JoinColumn({ name: 'order_no' })
   order: Order;
 
-  @ManyToOne(() => Product, product => product.orderItems)
+  @ManyToOne(() => Product, (product) => product.orderItems)
   @JoinColumn({ name: 'product_no' })
   product: Product;
-} 
+}

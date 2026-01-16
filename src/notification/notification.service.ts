@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationStatus, NotificationType } from '../entity/notification';
+import {
+  Notification,
+  NotificationStatus,
+  NotificationType,
+} from '../entity/notification';
 
 @Injectable()
 export class NotificationService {
@@ -17,7 +21,8 @@ export class NotificationService {
 
   findAll(query) {
     const { page = 1, limit = 10, type, status, userNo } = query;
-    const queryBuilder = this.notificationRepository.createQueryBuilder('notification');
+    const queryBuilder =
+      this.notificationRepository.createQueryBuilder('notification');
 
     if (type) {
       queryBuilder.andWhere('notification.type = :type', { type });
@@ -57,7 +62,8 @@ export class NotificationService {
 
   getUserNotifications(userId: string, query) {
     const { page = 1, limit = 10, status, type } = query;
-    const queryBuilder = this.notificationRepository.createQueryBuilder('notification');
+    const queryBuilder =
+      this.notificationRepository.createQueryBuilder('notification');
 
     queryBuilder.andWhere('notification.userNo = :userId', { userId });
 
@@ -91,7 +97,7 @@ export class NotificationService {
       {
         status: NotificationStatus.READ,
         readAt: new Date(),
-      }
+      },
     );
   }
 
@@ -103,7 +109,7 @@ export class NotificationService {
 
   sendNotification(body) {
     const { userNo, type, title, content, relatedId, relatedType } = body;
-    
+
     const notification = this.notificationRepository.create({
       userNo,
       type,
@@ -114,9 +120,11 @@ export class NotificationService {
       status: NotificationStatus.UNREAD,
     });
 
-    return this.notificationRepository.save(notification).then(savedNotification => {
-      // 这里可以添加推送逻辑（邮件、短信、推送通知等）
-      return savedNotification;
-    });
+    return this.notificationRepository
+      .save(notification)
+      .then((savedNotification) => {
+        // 这里可以添加推送逻辑（邮件、短信、推送通知等）
+        return savedNotification;
+      });
   }
-} 
+}

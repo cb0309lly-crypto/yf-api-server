@@ -8,4 +8,4 @@ export class LoginDto {
   @IsNotEmpty({ message: '密码不能为空' })
   @IsString()
   password: string;
-} 
+}

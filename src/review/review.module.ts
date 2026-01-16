@@ -10,4 +10,4 @@ import { Review } from '../entity/review';
   providers: [ReviewService],
   exports: [ReviewService],
 })
-export class ReviewModule {} 
+export class ReviewModule {}

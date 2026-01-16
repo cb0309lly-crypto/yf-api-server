@@ -66,7 +66,7 @@ export class PaymentService {
 
   processPayment(body) {
     const { orderNo, userNo, amount, method } = body;
-    
+
     const payment = this.paymentRepository.create({
       orderNo,
       userNo,
@@ -75,14 +75,20 @@ export class PaymentService {
       status: PaymentStatus.PROCESSING,
     });
 
-    return this.paymentRepository.save(payment).then(savedPayment => {
+    return this.paymentRepository.save(payment).then((savedPayment) => {
       // 模拟支付处理
-      setTimeout(() => {
-        this.paymentRepository.update(savedPayment.no, {
+      setTimeout(async () => {
+        await this.paymentRepository.update(savedPayment.no, {
           status: PaymentStatus.SUCCESS,
           paymentTime: new Date(),
           transactionId: `TXN_${Date.now()}`,
         });
+
+        // 支付成功后更新订单状态为"待发货"
+        await this.orderRepository.update(
+          { no: orderNo },
+          { orderStatus: OrderStatus.PENDING_SHIPMENT }
+        );
       }, 1000);
 
       return savedPayment;
@@ -91,17 +97,19 @@ export class PaymentService {
 
   refundPayment(body) {
     const { paymentId, refundAmount, reason } = body;
-    
-    return this.paymentRepository.findOne({ where: { no: paymentId } }).then(payment => {
-      if (payment && payment.status === PaymentStatus.SUCCESS) {
-        return this.paymentRepository.update(paymentId, {
-          status: PaymentStatus.REFUNDED,
-          refundAmount,
-          refundTime: new Date(),
-          description: reason,
-        });
-      }
-    });
+
+    return this.paymentRepository
+      .findOne({ where: { no: paymentId } })
+      .then((payment) => {
+        if (payment && payment.status === PaymentStatus.SUCCESS) {
+          return this.paymentRepository.update(paymentId, {
+            status: PaymentStatus.REFUNDED,
+            refundAmount,
+            refundTime: new Date(),
+            description: reason,
+          });
+        }
+      });
   }
 
   getUserPayments(userId: string, query) {
@@ -122,4 +130,4 @@ export class PaymentService {
 
     return queryBuilder.getMany();
   }
-} 
+}

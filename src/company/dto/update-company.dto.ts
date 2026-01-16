@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsEmail, Length, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  Length,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateCompanyDto {
   @IsString({ message: '公司编号必须是字符串' })

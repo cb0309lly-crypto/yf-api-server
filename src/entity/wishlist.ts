@@ -17,14 +17,20 @@ export class Wishlist extends Base {
   @Column({ name: 'is_notified', type: 'boolean', default: false })
   isNotified: boolean;
 
-  @Column({ name: 'price_when_added', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'price_when_added',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   priceWhenAdded: number;
 
-  @ManyToOne(() => User, user => user.wishlistItems)
+  @ManyToOne(() => User, (user) => user.wishlistItems)
   @JoinColumn({ name: 'user_no' })
   user: User;
 
-  @ManyToOne(() => Product, product => product.wishlistItems)
+  @ManyToOne(() => Product, (product) => product.wishlistItems)
   @JoinColumn({ name: 'product_no' })
   product: Product;
-} 
+}

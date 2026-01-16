@@ -3,7 +3,9 @@ import { RedisClientType } from 'redis';
 
 @Injectable()
 export class RedisService {
-  constructor(@Inject('REDIS_CLIENT') private readonly client: RedisClientType) {}
+  constructor(
+    @Inject('REDIS_CLIENT') private readonly client: RedisClientType,
+  ) {}
 
   async set(key: string, value: any, ttl?: number): Promise<void> {
     const data = JSON.stringify(value);
@@ -65,12 +67,12 @@ export class RedisService {
 
   // 列表操作
   async lpush(key: string, ...values: any[]): Promise<number> {
-    const serializedValues = values.map(v => JSON.stringify(v));
+    const serializedValues = values.map((v) => JSON.stringify(v));
     return await this.client.lPush(key, serializedValues);
   }
 
   async rpush(key: string, ...values: any[]): Promise<number> {
-    const serializedValues = values.map(v => JSON.stringify(v));
+    const serializedValues = values.map((v) => JSON.stringify(v));
     return await this.client.rPush(key, serializedValues);
   }
 
@@ -86,7 +88,7 @@ export class RedisService {
 
   async lrange(key: string, start: number, stop: number): Promise<any[]> {
     const data = await this.client.lRange(key, start, stop);
-    return data.map(item => {
+    return data.map((item) => {
       try {
         return JSON.parse(item);
       } catch {
@@ -101,18 +103,18 @@ export class RedisService {
 
   // 集合操作
   async sadd(key: string, ...members: any[]): Promise<number> {
-    const serializedMembers = members.map(m => JSON.stringify(m));
+    const serializedMembers = members.map((m) => JSON.stringify(m));
     return await this.client.sAdd(key, serializedMembers);
   }
 
   async srem(key: string, ...members: any[]): Promise<number> {
-    const serializedMembers = members.map(m => JSON.stringify(m));
+    const serializedMembers = members.map((m) => JSON.stringify(m));
     return await this.client.sRem(key, serializedMembers);
   }
 
   async smembers(key: string): Promise<any[]> {
     const data = await this.client.sMembers(key);
-    return data.map(item => {
+    return data.map((item) => {
       try {
         return JSON.parse(item);
       } catch {
@@ -150,7 +152,10 @@ export class RedisService {
     return await this.client.publish(channel, data);
   }
 
-  async subscribe(channel: string, callback: (message: any) => void): Promise<void> {
+  async subscribe(
+    channel: string,
+    callback: (message: any) => void,
+  ): Promise<void> {
     await this.client.subscribe(channel, (message) => {
       try {
         const parsedMessage = JSON.parse(message);

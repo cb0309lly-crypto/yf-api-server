@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsEmail, IsNumber, Length, MaxLength, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsNumber,
+  Length,
+  MaxLength,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateReceiverDto {

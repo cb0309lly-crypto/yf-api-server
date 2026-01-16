@@ -6,7 +6,7 @@ import { Product } from './product';
 export enum CartItemStatus {
   ACTIVE = 'active',
   REMOVED = 'removed',
-  PURCHASED = 'purchased'
+  PURCHASED = 'purchased',
 }
 
 @Entity('yf_db_cart')
@@ -36,7 +36,11 @@ export class Cart extends Base {
   })
   totalPrice: number;
 
-  @Column({ type: 'enum', enum: CartItemStatus, default: CartItemStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: CartItemStatus,
+    default: CartItemStatus.ACTIVE,
+  })
   status: CartItemStatus;
 
   @Column({ name: 'selected', type: 'boolean', default: true })
@@ -45,11 +49,11 @@ export class Cart extends Base {
   @Column({ name: 'added_at' })
   addedAt: Date;
 
-  @ManyToOne(() => User, user => user.cartItems)
+  @ManyToOne(() => User, (user) => user.cartItems)
   @JoinColumn({ name: 'user_no' })
   user: User;
 
-  @ManyToOne(() => Product, product => product.cartItems)
+  @ManyToOne(() => Product, (product) => product.cartItems)
   @JoinColumn({ name: 'product_no' })
   product: Product;
-} 
+}

@@ -6,14 +6,14 @@ export enum CouponType {
   DISCOUNT = 'discount',
   FIXED_AMOUNT = 'fixed_amount',
   FREE_SHIPPING = 'free_shipping',
-  PERCENTAGE = 'percentage'
+  PERCENTAGE = 'percentage',
 }
 
 export enum CouponStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   EXPIRED = 'expired',
-  USED = 'used'
+  USED = 'used',
 }
 
 @Entity('yf_db_coupon')
@@ -70,7 +70,7 @@ export class Coupon extends Base {
   @Column({ name: 'is_global', type: 'boolean', default: false })
   isGlobal: boolean;
 
-  @ManyToOne(() => User, user => user.coupons)
+  @ManyToOne(() => User, (user) => user.coupons)
   @JoinColumn({ name: 'user_no' })
   user: User;
-} 
+}

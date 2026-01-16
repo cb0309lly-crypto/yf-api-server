@@ -8,13 +8,13 @@ export enum NotificationType {
   SHIPPING = 'shipping',
   PROMOTION = 'promotion',
   SYSTEM = 'system',
-  SECURITY = 'security'
+  SECURITY = 'security',
 }
 
 export enum NotificationStatus {
   UNREAD = 'unread',
   READ = 'read',
-  ARCHIVED = 'archived'
+  ARCHIVED = 'archived',
 }
 
 @Entity('yf_db_notification')
@@ -31,7 +31,11 @@ export class Notification extends Base {
   @Column({ nullable: true, type: 'text' })
   content: string;
 
-  @Column({ type: 'enum', enum: NotificationStatus, default: NotificationStatus.UNREAD })
+  @Column({
+    type: 'enum',
+    enum: NotificationStatus,
+    default: NotificationStatus.UNREAD,
+  })
   status: NotificationStatus;
 
   @Column({ name: 'read_at', nullable: true })
@@ -58,7 +62,7 @@ export class Notification extends Base {
   @Column({ name: 'is_sms_sent', type: 'boolean', default: false })
   isSmsSent: boolean;
 
-  @ManyToOne(() => User, user => user.notifications)
+  @ManyToOne(() => User, (user) => user.notifications)
   @JoinColumn({ name: 'user_no' })
   user: User;
-} 
+}

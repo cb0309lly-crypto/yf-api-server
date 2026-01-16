@@ -22,4 +22,4 @@ export async function paginate<T extends ObjectLiteral>(
     page,
     pageSize,
   };
-} 
+}

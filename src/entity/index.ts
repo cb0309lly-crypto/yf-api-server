@@ -3,6 +3,8 @@ export { Base } from './base';
 
 // 用户相关实体
 export { User, Gender, UserStatus } from './user';
+export { Role } from './role';
+export { Menu } from './menu';
 
 // 商品相关实体
 export { Product, ProductStatus } from './product';
@@ -13,6 +15,7 @@ export { Inventory, InventoryStatus } from './inventory';
 export { Cart, CartItemStatus } from './cart';
 export { Order, OrderStatus } from './order';
 export { OrderItem, OrderItemStatus } from './order-item';
+export { Refund, RefundStatus, RefundType } from './refund';
 
 // 支付相关实体
 export { Payment, PaymentMethod, PaymentStatus } from './payment';
@@ -28,10 +31,14 @@ export { Promotion, PromotionType, PromotionStatus } from './promotion';
 export { Wishlist } from './wishlist';
 
 // 通知相关实体
-export { Notification, NotificationType, NotificationStatus } from './notification';
+export {
+  Notification,
+  NotificationType,
+  NotificationStatus,
+} from './notification';
 
 // 现有实体（保持兼容性）
 export { Company } from './company';
 export { Logistics } from './logistics';
 export { Receiver } from './receiver';
-export { System } from './system'; 
+export { System } from './system';

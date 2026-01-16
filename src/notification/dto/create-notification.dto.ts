@@ -1,5 +1,8 @@
 import { IsString, IsOptional, IsEnum, IsNotEmpty } from 'class-validator';
-import { NotificationType, NotificationStatus } from '../../entity/notification';
+import {
+  NotificationType,
+  NotificationStatus,
+} from '../../entity/notification';
 
 export class CreateNotificationDto {
   @IsString({ message: '用户编号不能为空' })
@@ -24,4 +27,4 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsString({ message: '相关链接必须是字符串' })
   link?: string;
-} 
+}

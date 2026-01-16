@@ -30,4 +30,4 @@ export class PaymentQueryDto {
   @IsOptional()
   @IsString({ message: '支付方式必须是字符串' })
   method?: string;
-} 
+}

@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { InventoryStatus } from '../../entity/inventory';
 
@@ -25,7 +32,7 @@ export class InventoryQueryDto {
   location?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(InventoryStatus, { message: '库存状态值不正确' })
   status?: InventoryStatus;
 
@@ -44,4 +51,4 @@ export class InventoryQueryDto {
   @IsOptional()
   @IsString({ message: '关键词必须是字符串' })
   keyword?: string;
-} 
+}

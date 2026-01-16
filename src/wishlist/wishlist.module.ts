@@ -10,4 +10,4 @@ import { Wishlist } from '../entity/wishlist';
   providers: [WishlistService],
   exports: [WishlistService],
 })
-export class WishlistModule {} 
+export class WishlistModule {}

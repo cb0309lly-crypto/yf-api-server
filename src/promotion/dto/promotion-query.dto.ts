@@ -26,4 +26,4 @@ export class PromotionQueryDto {
   @IsOptional()
   @IsString({ message: '促销状态必须是字符串' })
   status?: string;
-} 
+}

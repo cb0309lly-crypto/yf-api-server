@@ -25,4 +25,4 @@ export class UpdateInventoryDto {
   @IsOptional()
   @IsString({ message: '仓库位置必须是字符串' })
   location?: string;
-} 
+}

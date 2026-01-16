@@ -5,7 +5,7 @@ export enum LogisticsCurrentStatus {
   'SHIPPED' = '已发货',
   'DELIVERY' = '配送中',
   'SIGNED' = '已签收',
-  'UNKNOW' = '问题单'
+  'UNKNOW' = '问题单',
 }
 
 @Entity('yf_db_logistics')
@@ -16,7 +16,12 @@ export class Logistics extends Base {
   receiverNo: string;
   @Column({ name: 'order_no', nullable: true })
   orderNo: string;
-  @Column({ type: 'enum', enum: LogisticsCurrentStatus, default: LogisticsCurrentStatus.ORDERED, name: 'current_status' })
+  @Column({
+    type: 'enum',
+    enum: LogisticsCurrentStatus,
+    default: LogisticsCurrentStatus.ORDERED,
+    name: 'current_status',
+  })
   currentStatus: LogisticsCurrentStatus;
   @Column({ type: 'timestamp', nullable: true })
   receive_time: Date;

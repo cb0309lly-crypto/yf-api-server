@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, IsDateString, Length, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  Length,
+  MaxLength,
+} from 'class-validator';
 import { LogisticsCurrentStatus } from '../../entity/logistics';
 
 export class CreateLogisticsDto {

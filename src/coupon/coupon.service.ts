@@ -75,54 +75,66 @@ export class CouponService {
 
   validateCoupon(body) {
     const { code, amount, productIds } = body;
-    
-    return this.couponRepository.findOne({
-      where: { code, status: CouponStatus.ACTIVE },
-    }).then(coupon => {
-      if (!coupon) {
-        return { valid: false, message: '优惠券不存在' };
-      }
 
-      const now = new Date();
-      if (now < coupon.validFrom || now > coupon.validUntil) {
-        return { valid: false, message: '优惠券已过期或未生效' };
-      }
+    return this.couponRepository
+      .findOne({
+        where: { code, status: CouponStatus.ACTIVE },
+      })
+      .then((coupon) => {
+        if (!coupon) {
+          return { valid: false, message: '优惠券不存在' };
+        }
 
-      if (coupon.usedCount >= coupon.usageLimit) {
-        return { valid: false, message: '优惠券使用次数已达上限' };
-      }
+        const now = new Date();
+        if (now < coupon.validFrom || now > coupon.validUntil) {
+          return { valid: false, message: '优惠券已过期或未生效' };
+        }
 
-      if (amount < coupon.minimumAmount) {
-        return { valid: false, message: `订单金额不足，最低需要${coupon.minimumAmount}元` };
-      }
+        if (coupon.usedCount >= coupon.usageLimit) {
+          return { valid: false, message: '优惠券使用次数已达上限' };
+        }
 
-      return { valid: true, coupon };
-    });
+        if (amount < coupon.minimumAmount) {
+          return {
+            valid: false,
+            message: `订单金额不足，最低需要${coupon.minimumAmount}元`,
+          };
+        }
+
+        return { valid: true, coupon };
+      });
   }
 
   useCoupon(body) {
     const { couponId, orderNo } = body;
-    
-    return this.couponRepository.findOne({ where: { no: couponId } }).then(coupon => {
-      if (coupon && coupon.status === CouponStatus.ACTIVE) {
-        return this.couponRepository.update(couponId, {
-          usedCount: () => 'usedCount + 1',
-          status: CouponStatus.USED,
-        });
-      }
-    });
+
+    return this.couponRepository
+      .findOne({ where: { no: couponId } })
+      .then((coupon) => {
+        if (coupon && coupon.status === CouponStatus.ACTIVE) {
+          return this.couponRepository.update(couponId, {
+            usedCount: () => 'usedCount + 1',
+            status: CouponStatus.USED,
+          });
+        }
+      });
   }
 
   getAvailableCoupons(userId: string, query) {
     const { amount, productIds } = query;
     const now = new Date();
-    
+
     const queryBuilder = this.couponRepository.createQueryBuilder('coupon');
 
-    queryBuilder.andWhere('coupon.status = :status', { status: CouponStatus.ACTIVE });
+    queryBuilder.andWhere('coupon.status = :status', {
+      status: CouponStatus.ACTIVE,
+    });
     queryBuilder.andWhere('coupon.validFrom <= :now', { now });
     queryBuilder.andWhere('coupon.validUntil >= :now', { now });
-    queryBuilder.andWhere('(coupon.userNo = :userId OR coupon.isGlobal = true)', { userId });
+    queryBuilder.andWhere(
+      '(coupon.userNo = :userId OR coupon.isGlobal = true)',
+      { userId },
+    );
 
     if (amount) {
       queryBuilder.andWhere('coupon.minimumAmount <= :amount', { amount });
@@ -130,4 +142,4 @@ export class CouponService {
 
     return queryBuilder.getMany();
   }
-} 
+}

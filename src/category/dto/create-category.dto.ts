@@ -24,4 +24,4 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString({ message: '分类图片必须是字符串' })
   image?: string;
-} 
+}

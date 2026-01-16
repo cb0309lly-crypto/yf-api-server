@@ -37,14 +37,14 @@ export class LogisticsService {
     receiverNo?: string,
     orderNo?: string,
     currentStatus?: LogisticsCurrentStatus,
-    receive_time?: string
+    receive_time?: string,
   ): Promise<PaginationResult<Logistics>> {
     const qb = this.logisticsRepository.createQueryBuilder('logistics');
-    
+
     if (keyword) {
       qb.andWhere(
         '(logistics.senderNo LIKE :keyword OR logistics.receiverNo LIKE :keyword OR logistics.orderNo LIKE :keyword)',
-        { keyword: `%${keyword}%` }
+        { keyword: `%${keyword}%` },
       );
     }
     if (senderNo) {
@@ -57,14 +57,18 @@ export class LogisticsService {
       qb.andWhere('logistics.orderNo = :orderNo', { orderNo });
     }
     if (currentStatus) {
-      qb.andWhere('logistics.currentStatus = :currentStatus', { currentStatus });
+      qb.andWhere('logistics.currentStatus = :currentStatus', {
+        currentStatus,
+      });
     }
     if (receive_time) {
-      qb.andWhere('DATE(logistics.receive_time) = :receive_time', { receive_time });
+      qb.andWhere('DATE(logistics.receive_time) = :receive_time', {
+        receive_time,
+      });
     }
-    
+
     qb.orderBy('logistics.createdAt', 'DESC');
-    
+
     return paginate(qb, page, pageSize);
   }
 }

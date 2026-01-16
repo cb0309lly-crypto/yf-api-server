@@ -22,4 +22,4 @@ export class WishlistQueryDto {
   @IsOptional()
   @IsString({ message: '商品编号必须是字符串' })
   productNo?: string;
-} 
+}

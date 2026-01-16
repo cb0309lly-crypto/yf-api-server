@@ -8,7 +8,7 @@ export enum PaymentMethod {
   WECHAT = 'wechat',
   BANK_CARD = 'bank_card',
   CASH = 'cash',
-  WALLET = 'wallet'
+  WALLET = 'wallet',
 }
 
 export enum PaymentStatus {
@@ -17,7 +17,7 @@ export enum PaymentStatus {
   SUCCESS = 'success',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 
 @Entity('yf_db_payment')
@@ -68,11 +68,11 @@ export class Payment extends Base {
   @Column({ name: 'failure_reason', nullable: true })
   failureReason: string;
 
-  @ManyToOne(() => Order, order => order.payments)
+  @ManyToOne(() => Order, (order) => order.payments)
   @JoinColumn({ name: 'order_no' })
   order: Order;
 
-  @ManyToOne(() => User, user => user.payments)
+  @ManyToOne(() => User, (user) => user.payments)
   @JoinColumn({ name: 'user_no' })
   user: User;
-} 
+}

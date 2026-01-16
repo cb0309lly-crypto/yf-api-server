@@ -13,5 +13,17 @@ export class StatsController {
   async getCardData() {
     return this.statsService.getCardData();
   }
+
+  @Get('line-chart')
+  @ApiOperation({ summary: '获取折线图数据' })
+  async getLineChartData() {
+    return this.statsService.getLineChartData();
+  }
+
+  @Get('pie-chart')
+  @ApiOperation({ summary: '获取饼图数据' })
+  async getPieChartData() {
+    return this.statsService.getPieChartData();
+  }
 }
 

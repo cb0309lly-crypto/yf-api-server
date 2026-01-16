@@ -17,7 +17,8 @@ export class PromotionService {
 
   findAll(query) {
     const { page = 1, limit = 10, status, type, isFeatured } = query;
-    const queryBuilder = this.promotionRepository.createQueryBuilder('promotion');
+    const queryBuilder =
+      this.promotionRepository.createQueryBuilder('promotion');
 
     if (status) {
       queryBuilder.andWhere('promotion.status = :status', { status });
@@ -28,7 +29,9 @@ export class PromotionService {
     }
 
     if (isFeatured !== undefined) {
-      queryBuilder.andWhere('promotion.isFeatured = :isFeatured', { isFeatured });
+      queryBuilder.andWhere('promotion.isFeatured = :isFeatured', {
+        isFeatured,
+      });
     }
 
     queryBuilder
@@ -57,10 +60,13 @@ export class PromotionService {
   getActivePromotions(query) {
     const { page = 1, limit = 10, type } = query;
     const now = new Date();
-    
-    const queryBuilder = this.promotionRepository.createQueryBuilder('promotion');
 
-    queryBuilder.andWhere('promotion.status = :status', { status: PromotionStatus.ACTIVE });
+    const queryBuilder =
+      this.promotionRepository.createQueryBuilder('promotion');
+
+    queryBuilder.andWhere('promotion.status = :status', {
+      status: PromotionStatus.ACTIVE,
+    });
     queryBuilder.andWhere('promotion.startDate <= :now', { now });
     queryBuilder.andWhere('promotion.endDate >= :now', { now });
 
@@ -91,14 +97,16 @@ export class PromotionService {
 
   getProductPromotions(productId: string) {
     const now = new Date();
-    
+
     return this.promotionRepository
       .createQueryBuilder('promotion')
       .where('promotion.status = :status', { status: PromotionStatus.ACTIVE })
       .andWhere('promotion.startDate <= :now', { now })
       .andWhere('promotion.endDate >= :now', { now })
-      .andWhere('promotion.applicableProducts @> :productId', { productId: [productId] })
+      .andWhere('promotion.applicableProducts @> :productId', {
+        productId: [productId],
+      })
       .orderBy('promotion.priority', 'DESC')
       .getMany();
   }
-} 
+}

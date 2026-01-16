@@ -26,4 +26,4 @@ export class CreateOrderItemDto {
   @IsOptional()
   @IsString({ message: '商品规格必须是字符串' })
   specs?: string;
-} 
+}
