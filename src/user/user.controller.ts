@@ -56,8 +56,8 @@ export class UserController {
   async wxLogin(@Body() body: WxLoginDto) {
     const { code, nickname, avatar } = body;
     // 用 code 换 openid
-    const appid = '你的微信小程序appid';
-    const secret = '你的微信小程序secret';
+    const appid = 'wx7631df08d9432644';
+    const secret = 'fddaf29f791eb6cf59914676b9cc4ac0';
     const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${code}&grant_type=authorization_code`;
     const res = await axios.get(url);
     const { openid } = res.data;

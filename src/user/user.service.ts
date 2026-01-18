@@ -84,9 +84,13 @@ export class UserService {
     avatar?: string;
   }) {
     const user = this.userRepository.create({
+      name: data.nickname || '微信用户', // 必需的name字段
+      phone: `wx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // 生成临时手机号
       openId: data.openId,
-      nickname: data.nickname,
+      nickname: data.nickname || '微信用户',
       avatar: data.avatar,
+      authLogin: data.openId, // 使用openId作为登录名
+      status: 'created',
     });
     return this.userRepository.save(user);
   }
@@ -96,9 +100,11 @@ export class UserService {
     const payload = {
       sub: user.no,
       no: user.no,
-      nickname: user.nickname,
+      name: user.name || user.nickname || '微信用户',
+      nickname: user.nickname || '微信用户',
       avatar: user.avatar,
       openId: user.openId,
+      phone: user.phone,
     };
 
     const access_token = this.jwtService.sign(payload);
