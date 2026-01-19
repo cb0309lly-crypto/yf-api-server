@@ -147,8 +147,8 @@ export class CartService {
   }
 
   updateQuantity(body) {
-    const { id, quantity } = body;
-    return this.cartRepository.findOne({ where: { no: id } }).then((item) => {
+    const { no, quantity } = body;
+    return this.cartRepository.findOne({ where: { no } }).then((item) => {
       if (item) {
         item.quantity = quantity;
         const unitPrice = this.parseNumber(item.unitPrice);
@@ -156,5 +156,13 @@ export class CartService {
         return this.cartRepository.save(item);
       }
     });
+  }
+
+  selectAll(body) {
+    const { userNo, isSelected } = body;
+    return this.cartRepository.update(
+      { userNo, status: CartItemStatus.ACTIVE },
+      { selected: isSelected },
+    );
   }
 }

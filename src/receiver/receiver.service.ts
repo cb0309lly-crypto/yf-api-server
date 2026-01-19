@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Receiver } from '../entity/receiver';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,13 +12,44 @@ export class ReceiverService {
   ) {}
 
   async createReceiver(data: Partial<Receiver>): Promise<Receiver> {
+    if (data.isDefault && data.userNo) {
+      await this.clearDefaultAddress(data.userNo);
+    }
     const receiver = this.receiverRepository.create(data);
     return this.receiverRepository.save(receiver);
   }
 
   async updateReceiver(data: Partial<Receiver>): Promise<Receiver> {
-    this.receiverRepository.update({ no: data.no }, { ...data });
-    return this.receiverRepository.save(data);
+    if (!data.no) {
+      throw new BadRequestException('Receiver No is required');
+    }
+    if (data.isDefault) {
+      let userNo = data.userNo;
+      if (!userNo) {
+        const existing = await this.findOne(data.no);
+        userNo = existing?.userNo;
+      }
+      if (userNo) {
+        await this.clearDefaultAddress(userNo);
+      }
+    }
+    await this.receiverRepository.save(data);
+    const updated = await this.findOne(data.no);
+    if (!updated) {
+      throw new BadRequestException('Receiver not found');
+    }
+    return updated;
+  }
+
+  async deleteReceiver(no: string): Promise<void> {
+    const result = await this.receiverRepository.delete(no);
+    if (result.affected === 0) {
+      throw new BadRequestException('Receiver not found');
+    }
+  }
+
+  private async clearDefaultAddress(userNo: string) {
+    await this.receiverRepository.update({ userNo }, { isDefault: false });
   }
 
   async findAll(): Promise<Receiver[]> {
@@ -39,6 +70,7 @@ export class ReceiverService {
     groupBy?: number,
     description?: string,
     userNo?: string,
+    tag?: string,
   ): Promise<PaginationResult<Receiver>> {
     const qb = this.receiverRepository.createQueryBuilder('receiver');
 
@@ -69,6 +101,9 @@ export class ReceiverService {
     }
     if (userNo) {
       qb.andWhere('receiver.userNo = :userNo', { userNo });
+    }
+    if (tag) {
+      qb.andWhere('receiver.tag = :tag', { tag });
     }
 
     qb.orderBy('receiver.createdAt', 'DESC');

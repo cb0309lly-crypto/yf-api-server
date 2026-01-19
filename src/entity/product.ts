@@ -29,8 +29,24 @@ export class Product extends Base {
   })
   price: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0.0,
+    name: 'market_price',
+  })
+  marketPrice: number;
+
   @Column({ nullable: true, name: 'image_url' })
   imgUrl: string;
+
+  @Column({ type: 'json', nullable: true, name: 'swiper_images' })
+  swiperImages: string[];
+
+  @Column({ type: 'json', nullable: true, name: 'detail_images' })
+  detailImages: string[];
 
   @Column({
     nullable: true,
@@ -57,6 +73,9 @@ export class Product extends Base {
 
   @Column({ name: 'order_no', nullable: true })
   orderNo: string;
+
+  @Column({ name: 'is_delete', default: false })
+  isDelete: boolean;
 
   // 关系映射
   @ManyToOne(() => Category, (category) => category.products)

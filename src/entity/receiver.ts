@@ -3,8 +3,24 @@ import { Base } from './base';
 
 @Entity('yf_db_receiver')
 export class Receiver extends Base {
+  @Column({ nullable: true })
+  province: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  district: string;
+
   @Column()
   address: string;
+
+  @Column({ name: 'is_default', default: false })
+  isDefault: boolean;
+
+  @Column({ nullable: true })
+  tag: string;
+
   @Column()
   phone: string;
   @Column({ nullable: true })

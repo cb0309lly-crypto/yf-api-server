@@ -28,8 +28,22 @@ export class UpdateProductDto {
   price?: number;
 
   @IsOptional()
+  @IsNumber({}, { message: '市场价格必须是数字' })
+  @Min(0, { message: '市场价格不能小于0' })
+  @Max(999999.99, { message: '市场价格不能超过999999.99' })
+  marketPrice?: number;
+
+  @IsOptional()
   @IsUrl({}, { message: '图片URL格式不正确' })
   imgUrl?: string;
+
+  @IsOptional()
+  @IsUrl({}, { each: true, message: '轮播图必须是有效的URL数组' })
+  swiperImages?: string[];
+
+  @IsOptional()
+  @IsUrl({}, { each: true, message: '详情图必须是有效的URL数组' })
+  detailImages?: string[];
 
   @IsOptional()
   @IsEnum(ProductStatus, { message: '商品状态值不正确' })

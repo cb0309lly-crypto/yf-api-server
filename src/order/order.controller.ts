@@ -72,8 +72,9 @@ export class OrderController {
 
   @Get('mp/list')
   @ApiOperation({ summary: '获取小程序订单列表' })
-  async getMpOrderList(@Query() query: any) {
-    const { pageNum = 1, pageSize = 10, orderStatus, userNo } = query;
+  async getMpOrderList(@Query() query: any, @Request() req) {
+    const { pageNum = 1, pageSize = 10, orderStatus } = query;
+    const userNo = req.user?.no;
     return this.orderService.getMpOrderList({
       pageNum: Number(pageNum) || 1,
       pageSize: Number(pageSize) || 10,
@@ -84,7 +85,8 @@ export class OrderController {
 
   @Get('mp/count')
   @ApiOperation({ summary: '获取小程序订单统计' })
-  async getMpOrderCount(@Query('userNo') userNo?: string) {
+  async getMpOrderCount(@Request() req) {
+    const userNo = req.user?.no;
     return this.orderService.getMpOrderCount(userNo);
   }
 
@@ -102,8 +104,9 @@ export class OrderController {
 
   @Post('commit-pay')
   @ApiOperation({ summary: '小程序提交支付' })
-  async commitPay(@Body() body: any) {
-    return this.orderService.commitPay(body);
+  async commitPay(@Body() body: any, @Request() req) {
+    const userNo = req.user?.no;
+    return this.orderService.commitPay(body, userNo);
   }
 
   @Get('business-time')

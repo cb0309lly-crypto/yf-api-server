@@ -4,7 +4,7 @@ import { Repository, DataSource, LessThan } from 'typeorm';
 import { Order, OrderStatus } from '../entity/order';
 import { OrderItem } from '../entity/order-item';
 import { Product } from '../entity/product';
-import { Payment, PaymentStatus } from '../entity/payment';
+import { Payment, PaymentStatus, PaymentMethod } from '../entity/payment';
 import { Logistics } from '../entity/logistics';
 import { Receiver } from '../entity/receiver';
 import { PaginationResult, paginate } from '../common/utils/pagination.util';
@@ -304,6 +304,8 @@ export class OrderService {
 
     const storeMap = new Map();
     const storeGoodsList: any[] = [];
+    let totalAmount = 0;
+    let totalGoodsCount = 0;
 
     for (const goods of goodsRequestList) {
       const storeId = goods.storeId || '1000';
@@ -320,9 +322,13 @@ export class OrderService {
       const product = goods.spuId
         ? await this.productRepository.findOne({ where: { no: goods.spuId } })
         : null;
-      const unitPrice = this.parseNumber(goods.price ?? product?.price ?? 0);
+      const unitPrice = this.parseNumber(product?.price ?? goods.price ?? 0);
       const quantity = Number(goods.quantity || 1);
       const totalPrice = unitPrice * quantity;
+      
+      totalAmount += totalPrice;
+      totalGoodsCount += quantity;
+
       const skuDetail = {
         skuId: goods.skuId || `${goods.spuId || 'sku'}-default`,
         spuId: goods.spuId || product?.no,
@@ -346,6 +352,8 @@ export class OrderService {
 
     storeMap.forEach((value) => storeGoodsList.push(value));
 
+    const totalAmountStr = this.toCentString(totalAmount);
+
     return {
       storeGoodsList,
       outOfStockGoodsList: [],
@@ -355,23 +363,143 @@ export class OrderService {
       couponList: [],
       userAddress: userAddressReq,
       settleType: storeGoodsList.length > 0 ? 1 : 0,
+      totalAmount: totalAmountStr,
+      totalPayAmount: totalAmountStr,
+      totalSalePrice: totalAmountStr,
+      totalGoodsCount,
+      totalPromotionAmount: '0',
+      totalDeliveryFee: '0',
+      totalCouponAmount: '0',
+      invoiceSupport: 0,
     };
   }
 
-  async commitPay(payload: any) {
-    const totalAmount = payload?.totalAmount || 0;
-    return {
-      isSuccess: true,
-      tradeNo: `TRADE-${Date.now()}`,
-      payInfo: '{}',
-      code: null,
-      transactionId: `TX-${Date.now()}`,
-      msg: null,
-      interactId: `${Date.now()}`,
-      channel: 'wechat',
-      limitGoodsList: null,
-      payAmt: totalAmount,
-    };
+  async commitPay(payload: any, userNo?: string) {
+    const { goodsRequestList, userAddressReq } = payload;
+    
+    // Start transaction
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Generate Readable Order No for display/reference
+      const readableOrderNo = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      
+      let calculatedTotal = 0;
+      const orderItems: OrderItem[] = [];
+      
+      // We need to save the order first to get the generated UUID
+      // But we need calculatedTotal for the order.
+      // So first calculate total.
+
+      // Process items calculation first
+      const pendingItems: any[] = [];
+      for (const goods of goodsRequestList) {
+        // Ideally fetch product from DB to verify price
+        const product = goods.spuId 
+          ? await this.productRepository.findOne({ where: { no: goods.spuId } }) 
+          : null;
+        
+        // Use price from DB if available, otherwise from request (fallback)
+        const unitPrice = this.parseNumber(product?.price ?? goods.price ?? 0);
+        const quantity = Number(goods.quantity || 1);
+        const itemTotal = unitPrice * quantity;
+        calculatedTotal += itemTotal;
+
+        pendingItems.push({
+          productNo: goods.spuId,
+          quantity,
+          unitPrice,
+          itemTotal,
+          name: goods.goodsName || product?.name,
+          image: goods.primaryImage || product?.imgUrl,
+          spec: goods.specInfo
+        });
+      }
+
+      // Format address
+      const shipAddress = userAddressReq 
+        ? `${userAddressReq.provinceName || ''}${userAddressReq.cityName || ''}${userAddressReq.districtName || ''}${userAddressReq.detailAddress || ''}` 
+        : '';
+
+      // Create Order
+      const order = this.orderRepository.create({
+        // no: Let DB generate UUID
+        name: readableOrderNo, // Store readable ID in name
+        userNo: userNo || 'anonymous',
+        receiverName: userAddressReq?.name,
+        receiverPhone: userAddressReq?.phone || userAddressReq?.phoneNumber,
+        shipAddress,
+        orderTotal: calculatedTotal,
+        orderStatus: OrderStatus.UNPAY, // Default status
+        createdAt: new Date(),
+      });
+
+      const savedOrder = await queryRunner.manager.save(Order, order);
+      const orderNo = savedOrder.no; // This is the UUID
+
+      // Create OrderItems
+      for (const item of pendingItems) {
+        const orderItem = this.orderItemRepository.create({
+          orderNo: orderNo,
+          productNo: item.productNo,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.itemTotal,
+          finalPrice: item.itemTotal,
+          name: item.name,
+          productSnapshot: {
+            image: item.image,
+            spec: item.spec
+          }
+        });
+        orderItems.push(orderItem);
+      }
+      await queryRunner.manager.save(OrderItem, orderItems);
+
+      // Create initial Payment record
+      const payment = this.paymentRepository.create({
+        orderNo: orderNo,
+        userNo: userNo || 'anonymous',
+        amount: calculatedTotal,
+        status: PaymentStatus.PENDING,
+        method: PaymentMethod.WECHAT,
+        transactionId: `TX-${Date.now()}`,
+        createdAt: new Date(),
+      });
+      await queryRunner.manager.save(Payment, payment);
+
+      await queryRunner.commitTransaction();
+
+      const totalAmountStr = this.toCentString(calculatedTotal);
+
+      return {
+        isSuccess: true,
+        tradeNo: orderNo, // Return UUID
+        payInfo: '{}',
+        code: 'Success',
+        transactionId: payment.transactionId,
+        msg: '订单创建成功',
+        interactId: `${Date.now()}`,
+        channel: 'wechat',
+        limitGoodsList: null,
+        payAmt: totalAmountStr,
+      };
+
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('Commit Pay Error', err);
+      return {
+        isSuccess: false,
+        code: 'Fail',
+        msg: '创建订单失败',
+        tradeNo: null,
+        payAmt: 0
+      };
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   getBusinessTime() {
@@ -487,8 +615,8 @@ export class OrderService {
         receiverLongitude: '',
         receiverLatitude: '',
         receiverIdentity: order.userNo,
-        receiverPhone: '',
-        receiverName: '',
+        receiverPhone: order.receiverPhone || '',
+        receiverName: order.receiverName || '',
         expectArrivalTime: null,
         senderName: '',
         senderPhone: '',

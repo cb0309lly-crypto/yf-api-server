@@ -16,6 +16,14 @@ export class CreateOrderDto {
   shipAddress?: string;
 
   @IsOptional()
+  @IsString()
+  receiverName?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverPhone?: string;
+
+  @IsOptional()
   @IsNumber({}, { message: '订单总额必须是数字' })
   @Min(0, { message: '订单总额不能小于0' })
   @Max(999999.99, { message: '订单总额不能超过999999.99' })

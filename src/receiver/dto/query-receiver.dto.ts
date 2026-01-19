@@ -54,6 +54,10 @@ export class QueryReceiverDto {
   userNo?: string;
 
   @IsOptional()
+  @IsString()
+  tag?: string;
+
+  @IsOptional()
   @IsString({ message: '关键词必须是字符串' })
   keyword?: string;
 }

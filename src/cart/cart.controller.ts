@@ -19,6 +19,7 @@ import {
   RemoveFromCartDto,
   UpdateQuantityDto,
   ClearCartDto,
+  SelectAllDto,
 } from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -86,5 +87,11 @@ export class CartController {
   @ApiOperation({ summary: '更新购物车商品数量' })
   updateQuantity(@Body() body: UpdateQuantityDto) {
     return this.cartService.updateQuantity(body);
+  }
+
+  @Post('select-all')
+  @ApiOperation({ summary: '全选/取消全选' })
+  selectAll(@Body() body: SelectAllDto) {
+    return this.cartService.selectAll(body);
   }
 }

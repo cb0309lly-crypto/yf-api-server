@@ -6,3 +6,4 @@ export { AddToCartDto } from './add-to-cart.dto';
 export { RemoveFromCartDto } from './remove-from-cart.dto';
 export { UpdateQuantityDto } from './update-quantity.dto';
 export { ClearCartDto } from './clear-cart.dto';
+export { SelectAllDto } from './select-all.dto';

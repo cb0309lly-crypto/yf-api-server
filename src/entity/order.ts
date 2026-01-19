@@ -19,6 +19,12 @@ export class Order extends Base {
   @Column({ name: 'user_no' })
   userNo: string;
 
+  @Column({ name: 'receiver_name', nullable: true })
+  receiverName: string;
+
+  @Column({ name: 'receiver_phone', nullable: true })
+  receiverPhone: string;
+
   @Column({ name: 'ship_address', nullable: true })
   shipAddress: string;
 

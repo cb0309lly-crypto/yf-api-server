@@ -7,6 +7,7 @@ import {
   MaxLength,
   Min,
   Max,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,9 +16,29 @@ export class CreateReceiverDto {
   @Length(1, 100, { message: '收货人名称长度必须在1-100个字符之间' })
   name: string;
 
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
   @IsString({ message: '收货地址必须是字符串' })
   @Length(1, 200, { message: '收货地址长度必须在1-200个字符之间' })
   address: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
+
+  @IsOptional()
+  @IsString()
+  tag?: string;
 
   @IsString({ message: '电话号码必须是字符串' })
   @Length(11, 15, { message: '电话号码长度必须在11-15个字符之间' })

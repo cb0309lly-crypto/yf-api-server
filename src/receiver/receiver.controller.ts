@@ -1,4 +1,4 @@
-import { Controller, Put, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Put, Post, Get, Body, Param, Query, Delete } from '@nestjs/common';
 import { ReceiverService } from './receiver.service';
 import { Receiver } from '../entity/receiver';
 import {
@@ -48,6 +48,7 @@ export class ReceiverController {
       groupBy,
       description,
       userNo,
+      tag,
     } = queryReceiverDto;
     return this.receiverService.findAllPaged(
       page,
@@ -59,6 +60,7 @@ export class ReceiverController {
       groupBy,
       description,
       userNo,
+      tag,
     );
   }
 
@@ -66,5 +68,11 @@ export class ReceiverController {
   @ApiOperation({ summary: '获取收货人详情' })
   async getReceiver(@Param() params: ReceiverIdDto): Promise<Receiver | null> {
     return this.receiverService.findOne(params.no);
+  }
+
+  @Delete('/:no')
+  @ApiOperation({ summary: '删除收货人' })
+  async deleteReceiver(@Param() params: ReceiverIdDto): Promise<void> {
+    return this.receiverService.deleteReceiver(params.no);
   }
 }
