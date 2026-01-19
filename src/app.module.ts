@@ -31,6 +31,7 @@ import { join } from 'path';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SystemManageModule } from './system-manage/system-manage.module';
 import { RefundModule } from './refund/refund.module';
+import { DeploymentModule } from './deployment/deployment.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { RefundModule } from './refund/refund.module';
     NotificationModule,
     StatsModule,
     RefundModule,
+    DeploymentModule,
   ],
   controllers: [AppController],
   providers: [

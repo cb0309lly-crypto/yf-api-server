@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { StatsService } from './stats.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -18,6 +18,12 @@ export class StatsController {
   @ApiOperation({ summary: '获取小程序首页数据' })
   async getMpHomeData() {
     return this.statsService.getMpHomeData();
+  }
+
+  @Post('mp-home')
+  @ApiOperation({ summary: '更新小程序首页数据' })
+  async updateMpHomeData(@Body() body: { swiper: string[]; activityImg: string }) {
+    return this.statsService.updateMpHomeData(body);
   }
 
   @Get('line-chart')

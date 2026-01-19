@@ -42,3 +42,4 @@ export { Company } from './company';
 export { Logistics } from './logistics';
 export { Receiver } from './receiver';
 export { System } from './system';
+export { Config } from './config';

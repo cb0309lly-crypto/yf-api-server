@@ -59,7 +59,7 @@ export class CategoryService {
       })
       .then((list) => {
         const nodeMap = new Map();
-        const roots = [];
+        const roots: any[] = [];
 
         list.forEach((item) => {
           nodeMap.set(item.no, { ...item, children: [] });

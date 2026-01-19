@@ -7,6 +7,7 @@ import { Promotion, PromotionStatus } from '../entity/promotion';
 import { Order, OrderStatus } from '../entity/order';
 import { Product } from '../entity/product';
 import { Payment } from '../entity/payment';
+import { Config } from '../entity/config';
 
 @Injectable()
 export class StatsService {
@@ -23,6 +24,8 @@ export class StatsService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(Promotion)
     private promotionRepository: Repository<Promotion>,
+    @InjectRepository(Config)
+    private configRepository: Repository<Config>,
   ) {}
 
   async getCardData() {
@@ -94,6 +97,19 @@ export class StatsService {
   }
 
   async getMpHomeData() {
+    // Check for config first
+    const config = await this.configRepository.findOne({
+      where: { key: 'mp_home_config' },
+    });
+    let configData: any = {};
+    if (config && config.value) {
+      try {
+        configData = JSON.parse(config.value);
+      } catch (e) {
+        console.error('Parse mp_home_config error', e);
+      }
+    }
+
     const [products, categories, promotions] = await Promise.all([
       this.productRepository.find({
         order: { createdAt: 'DESC' },
@@ -109,9 +125,11 @@ export class StatsService {
       }),
     ]);
 
-    const swiper = (products || [])
-      .map((item) => item.imgUrl)
-      .filter((img) => !!img);
+    // Use config if available, otherwise fallback
+    const swiper =
+      configData.swiper && configData.swiper.length > 0
+        ? configData.swiper
+        : (products || []).map((item) => item.imgUrl).filter((img) => !!img);
 
     const tabList = (categories || [])
       .filter((item) => !item.parentId || item.categoryLevel === 1)
@@ -121,12 +139,28 @@ export class StatsService {
       }));
 
     const activityImg =
-      promotions?.[0]?.bannerImage || products?.[0]?.imgUrl || '';
+      configData.activityImg ||
+      promotions?.[0]?.bannerImage ||
+      products?.[0]?.imgUrl ||
+      '';
 
     return {
       swiper,
       tabList,
       activityImg,
     };
+  }
+
+  async updateMpHomeData(data: { swiper: string[]; activityImg: string }) {
+    let config = await this.configRepository.findOne({
+      where: { key: 'mp_home_config' },
+    });
+    if (!config) {
+      config = new Config();
+      config.key = 'mp_home_config';
+      config.description = '小程序首页配置';
+    }
+    config.value = JSON.stringify(data);
+    return this.configRepository.save(config);
   }
 }

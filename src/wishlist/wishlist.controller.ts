@@ -9,7 +9,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { WishlistService } from './wishlist.service';
-import { CreateWishlistDto, WishlistQueryDto, WishlistIdDto } from './dto';
+import {
+  CreateWishlistDto,
+  WishlistQueryDto,
+  WishlistIdDto,
+  UpdateWishlistDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('收藏夹管理')
@@ -38,7 +43,7 @@ export class WishlistController {
 
   @Put(':id')
   @ApiOperation({ summary: '更新收藏记录' })
-  update(@Param() params: WishlistIdDto, @Body() body: any) {
+  update(@Param() params: WishlistIdDto, @Body() body: UpdateWishlistDto) {
     return this.wishlistService.update(params.id, body);
   }
 
@@ -50,19 +55,22 @@ export class WishlistController {
 
   @Get('user/:userId')
   @ApiOperation({ summary: '获取用户收藏夹' })
-  getUserWishlist(@Param('userId') userId: string, @Query() query: any) {
+  getUserWishlist(
+    @Param('userId') userId: string,
+    @Query() query: WishlistQueryDto,
+  ) {
     return this.wishlistService.getUserWishlist(userId, query);
   }
 
   @Post('add')
   @ApiOperation({ summary: '添加到收藏夹' })
-  addToWishlist(@Body() body: any) {
+  addToWishlist(@Body() body: CreateWishlistDto) {
     return this.wishlistService.addToWishlist(body);
   }
 
   @Post('remove')
   @ApiOperation({ summary: '从收藏夹移除' })
-  removeFromWishlist(@Body() body: any) {
+  removeFromWishlist(@Body() body: CreateWishlistDto) {
     return this.wishlistService.removeFromWishlist(body);
   }
 
@@ -74,7 +82,7 @@ export class WishlistController {
 
   @Post('check')
   @ApiOperation({ summary: '检查是否已收藏' })
-  checkInWishlist(@Body() body: any) {
+  checkInWishlist(@Body() body: CreateWishlistDto) {
     return this.wishlistService.checkInWishlist(body);
   }
 }

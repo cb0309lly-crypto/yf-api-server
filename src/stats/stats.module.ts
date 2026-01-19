@@ -8,10 +8,19 @@ import { Product } from '../entity/product';
 import { Payment } from '../entity/payment';
 import { Category } from '../entity/category';
 import { Promotion } from '../entity/promotion';
+import { Config } from '../entity/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Order, Product, Payment, Category, Promotion]),
+    TypeOrmModule.forFeature([
+      User,
+      Order,
+      Product,
+      Payment,
+      Category,
+      Promotion,
+      Config,
+    ]),
   ],
   controllers: [StatsController],
   providers: [StatsService],

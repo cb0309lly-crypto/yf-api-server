@@ -5,12 +5,13 @@ import {
   Body,
   Post,
   Query,
-  Request,
+  Req,
   UnauthorizedException,
   BadRequestException,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { UserService } from './user.service';
 import { Public } from '../common/decorators/public.decorator';
 import {
@@ -22,6 +23,13 @@ import {
 } from './dto';
 import axios from 'axios';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+
+interface AuthRequest extends Request {
+  user: {
+    no: string;
+    [key: string]: any;
+  };
+}
 
 @ApiTags('用户认证')
 @Controller('auth')
@@ -93,12 +101,19 @@ export class UserController {
     return this.userService.loginByOpenId(user);
   }
 
+  @Public()
+  @Post('mock-login')
+  @ApiOperation({ summary: '模拟登录(无微信)' })
+  async mockLogin() {
+    return this.userService.mockLogin();
+  }
+
   @ApiBearerAuth()
   @Put('logout')
   @ApiOperation({ summary: '用户登出' })
-  async logout(@Request() req, @Body() body) {
+  logout(@Req() req: AuthRequest) {
     // 清除Redis中的token
-    await this.userService.logout(req.user.no);
+    this.userService.logout(req.user.no);
     return { message: 'logout成功', user: req.user };
   }
 
@@ -106,7 +121,7 @@ export class UserController {
   @ApiBearerAuth()
   @Post('refresh-token')
   @ApiOperation({ summary: '刷新 Token' })
-  async refreshToken(@Request() req) {
+  async refreshToken(@Req() req: AuthRequest) {
     const result = await this.userService.refreshToken(req.user.no);
     if (!result) {
       throw new UnauthorizedException('刷新token失败');
@@ -118,7 +133,7 @@ export class UserController {
   @ApiBearerAuth()
   @Get('online-status')
   @ApiOperation({ summary: '获取在线状态' })
-  async getOnlineStatus(@Request() req) {
+  async getOnlineStatus(@Req() req: AuthRequest) {
     const isOnline = await this.userService.getUserOnlineStatus(req.user.no);
     return {
       isOnline,
@@ -131,16 +146,13 @@ export class UserController {
   @ApiBearerAuth()
   @Get('validate-token')
   @ApiOperation({ summary: '验证 Token' })
-  async validateToken(@Request() req) {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+  validateToken(@Req() req: AuthRequest) {
+    const token = req.headers['authorization']?.replace('Bearer ', '');
     if (!token) {
       throw new UnauthorizedException('Token不能为空');
     }
 
-    const isValid = await this.userService.validateTokenFromRedis(
-      req.user.no,
-      token,
-    );
+    const isValid = this.userService.validateTokenFromRedis(req.user.no, token);
     return {
       valid: isValid,
       user: req.user,
@@ -152,7 +164,7 @@ export class UserController {
   @ApiBearerAuth()
   @Get('redis-user-info')
   @ApiOperation({ summary: '获取缓存的用户信息' })
-  async getRedisUserInfo(@Request() req) {
+  async getRedisUserInfo(@Req() req: AuthRequest) {
     const userInfo = await this.userService.getUserFromRedis(req.user.no);
     if (!userInfo) {
       throw new UnauthorizedException('用户信息不存在或已过期');
@@ -163,7 +175,7 @@ export class UserController {
   @ApiBearerAuth()
   @Get('user_info')
   @ApiOperation({ summary: '获取用户信息' })
-  async getUserInfo(@Request() req) {
+  async getUserInfo(@Req() req: AuthRequest) {
     const userInfo = await this.userService.getAuthUserInfo(req.user.no);
     if (!userInfo) {
       throw new UnauthorizedException('用户不存在');

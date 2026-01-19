@@ -275,7 +275,7 @@ export class OrderService {
       if (!countMap.has(status)) {
         countMap.set(status, 0);
       }
-      countMap.set(status, countMap.get(status) + 1);
+      countMap.set(status, (countMap.get(status) || 0) + 1);
     });
     return Array.from(countMap.entries()).map(([tabType, orderNum]) => ({
       tabType,
@@ -303,7 +303,7 @@ export class OrderService {
     const { goodsRequestList = [], userAddressReq = null } = payload || {};
 
     const storeMap = new Map();
-    const storeGoodsList = [];
+    const storeGoodsList: any[] = [];
 
     for (const goods of goodsRequestList) {
       const storeId = goods.storeId || '1000';
@@ -454,7 +454,9 @@ export class OrderService {
       orderSubStatus: null,
       totalAmount: this.toCentString(this.parseNumber(order.orderTotal || 0)),
       goodsAmount: this.toCentString(this.parseNumber(order.orderTotal || 0)),
-      goodsAmountApp: this.toCentString(this.parseNumber(order.orderTotal || 0)),
+      goodsAmountApp: this.toCentString(
+        this.parseNumber(order.orderTotal || 0),
+      ),
       paymentAmount: this.toCentString(this.parseNumber(order.orderTotal || 0)),
       freightFee: '0',
       packageFee: '0',
@@ -505,7 +507,9 @@ export class OrderService {
         traceNo: null,
         channelTrxNo: null,
         period: null,
-        payTime: payment?.paymentTime ? `${payment.paymentTime.getTime()}` : null,
+        payTime: payment?.paymentTime
+          ? `${payment.paymentTime.getTime()}`
+          : null,
         paySuccessTime:
           payment?.status === PaymentStatus.SUCCESS && payment.paymentTime
             ? `${payment.paymentTime.getTime()}`
@@ -527,7 +531,7 @@ export class OrderService {
 
   private toMpOrderDetail(order: Order, logistics?: Logistics | null) {
     const summary = this.toMpOrderSummary(order);
-    const nodes = [];
+    const nodes: any[] = [];
     if (summary.orderStatus === 5) {
       nodes.push({
         title: '已下单',

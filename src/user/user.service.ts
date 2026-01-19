@@ -5,6 +5,8 @@ import { User } from '../entity/user';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
+import { LoginDto, RegisterDto } from './dto';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -13,7 +15,7 @@ export class UserService {
   ) {}
 
   // 注册新用户
-  async register(body: any) {
+  async register(body: RegisterDto) {
     const exist = await this.userRepository.findOne({
       where: { phone: body.phone },
     });
@@ -36,7 +38,7 @@ export class UserService {
   }
 
   // 登录时生成token
-  async login(body: any) {
+  async login(body: LoginDto) {
     const user = await this.validateUser(body.username, body.password);
     if (!user) {
       return null;
@@ -96,7 +98,7 @@ export class UserService {
   }
 
   // 微信用户登录生成token
-  async loginByOpenId(user: any) {
+  loginByOpenId(user: User) {
     const payload = {
       sub: user.no,
       no: user.no,
@@ -116,12 +118,11 @@ export class UserService {
   }
 
   // 验证 token 是否有效且属于该用户
-  async validateTokenFromRedis(
-    userNo: string,
-    token: string,
-  ): Promise<boolean> {
+  validateTokenFromRedis(userNo: string, token: string): boolean {
     try {
-      const decoded: any = this.jwtService.verify(token);
+      const decoded = this.jwtService.verify<{ no: string; sub: string }>(
+        token,
+      );
       return decoded?.no === userNo || decoded?.sub === userNo;
     } catch (error) {
       console.error('验证Redis token失败:', error);
@@ -154,11 +155,11 @@ export class UserService {
   }
 
   // 登出（不再维护 Redis token）
-  async logout(userNo: string): Promise<void> {
-    try {
-    } catch (error) {
-      console.error('清除Redis token失败:', error);
-    }
+  logout(_userNo: string): void {
+    // try {
+    // } catch (error) {
+    //   console.error('清除Redis token失败:', error);
+    // }
   }
 
   // 刷新token
@@ -246,5 +247,24 @@ export class UserService {
       userName:
         user.nickname || user.name || user.authLogin || user.phone || user.no,
     };
+  }
+
+  // 模拟登录
+  async mockLogin() {
+    let user = await this.userRepository.findOne({
+      where: { authLogin: 'mock_user' },
+    });
+    if (!user) {
+      user = this.userRepository.create({
+        name: 'MockUser',
+        phone: 'mock_123456',
+        authLogin: 'mock_user',
+        nickname: '体验用户',
+        avatar: '',
+        status: 'active',
+      });
+      user = await this.userRepository.save(user);
+    }
+    return this.loginByOpenId(user);
   }
 }

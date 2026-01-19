@@ -88,8 +88,6 @@ export class ProductService {
       order: { createdAt: 'DESC' },
       take: limit,
     });
-    return (list || [])
-      .map((item) => item.name)
-      .filter((name) => !!name);
+    return (list || []).map((item) => item.name).filter((name) => !!name);
   }
 }

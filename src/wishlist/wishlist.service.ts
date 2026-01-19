@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wishlist } from '../entity/wishlist';
+import { CreateWishlistDto, WishlistQueryDto, UpdateWishlistDto } from './dto';
 
 @Injectable()
 export class WishlistService {
@@ -10,13 +11,13 @@ export class WishlistService {
     private wishlistRepository: Repository<Wishlist>,
   ) {}
 
-  create(body) {
+  create(body: CreateWishlistDto) {
     const wishlist = this.wishlistRepository.create(body);
     return this.wishlistRepository.save(wishlist);
   }
 
-  findAll(query) {
-    const { page = 1, limit = 10, userNo, productNo } = query;
+  findAll(query: WishlistQueryDto) {
+    const { page = 1, pageSize = 10, userNo, productNo } = query;
     const queryBuilder = this.wishlistRepository.createQueryBuilder('wishlist');
 
     if (userNo) {
@@ -31,8 +32,8 @@ export class WishlistService {
       .leftJoinAndSelect('wishlist.product', 'product')
       .leftJoinAndSelect('wishlist.user', 'user')
       .orderBy('wishlist.addedAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
 
     return queryBuilder.getMany();
   }
@@ -44,7 +45,7 @@ export class WishlistService {
     });
   }
 
-  update(id: string, body) {
+  update(id: string, body: UpdateWishlistDto) {
     return this.wishlistRepository.update(id, body);
   }
 
@@ -52,8 +53,8 @@ export class WishlistService {
     return this.wishlistRepository.delete(id);
   }
 
-  getUserWishlist(userId: string, query) {
-    const { page = 1, limit = 10 } = query;
+  getUserWishlist(userId: string, query: WishlistQueryDto) {
+    const { page = 1, pageSize = 10 } = query;
 
     const queryBuilder = this.wishlistRepository.createQueryBuilder('wishlist');
 
@@ -61,13 +62,13 @@ export class WishlistService {
     queryBuilder
       .leftJoinAndSelect('wishlist.product', 'product')
       .orderBy('wishlist.addedAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
 
     return queryBuilder.getMany();
   }
 
-  addToWishlist(body) {
+  addToWishlist(body: CreateWishlistDto) {
     const { userNo, productNo } = body;
 
     // 检查是否已存在
@@ -89,7 +90,7 @@ export class WishlistService {
       });
   }
 
-  removeFromWishlist(body) {
+  removeFromWishlist(body: CreateWishlistDto) {
     const { userNo, productNo } = body;
     return this.wishlistRepository.delete({ userNo, productNo });
   }
@@ -98,7 +99,7 @@ export class WishlistService {
     return this.wishlistRepository.delete({ userNo });
   }
 
-  checkInWishlist(body) {
+  checkInWishlist(body: CreateWishlistDto) {
     const { userNo, productNo } = body;
     return this.wishlistRepository
       .findOne({
