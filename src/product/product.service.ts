@@ -81,4 +81,15 @@ export class ProductService {
     }
     return product;
   }
+
+  async getPopularKeywords(limit = 10): Promise<string[]> {
+    const list = await this.productRepository.find({
+      select: ['name'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+    return (list || [])
+      .map((item) => item.name)
+      .filter((name) => !!name);
+  }
 }

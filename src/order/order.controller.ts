@@ -69,4 +69,46 @@ export class OrderController {
   getOne(@Param() params: OrderIdDto): Promise<Order | null> {
     return this.orderService.findOne(params.id);
   }
+
+  @Get('mp/list')
+  @ApiOperation({ summary: '获取小程序订单列表' })
+  async getMpOrderList(@Query() query: any) {
+    const { pageNum = 1, pageSize = 10, orderStatus, userNo } = query;
+    return this.orderService.getMpOrderList({
+      pageNum: Number(pageNum) || 1,
+      pageSize: Number(pageSize) || 10,
+      orderStatus: orderStatus !== undefined ? Number(orderStatus) : undefined,
+      userNo,
+    });
+  }
+
+  @Get('mp/count')
+  @ApiOperation({ summary: '获取小程序订单统计' })
+  async getMpOrderCount(@Query('userNo') userNo?: string) {
+    return this.orderService.getMpOrderCount(userNo);
+  }
+
+  @Get('mp/detail/:orderNo')
+  @ApiOperation({ summary: '获取小程序订单详情' })
+  async getMpOrderDetail(@Param('orderNo') orderNo: string) {
+    return this.orderService.getMpOrderDetail(orderNo);
+  }
+
+  @Post('settle')
+  @ApiOperation({ summary: '获取小程序结算数据' })
+  async getSettleDetail(@Body() body: any) {
+    return this.orderService.getSettleDetail(body);
+  }
+
+  @Post('commit-pay')
+  @ApiOperation({ summary: '小程序提交支付' })
+  async commitPay(@Body() body: any) {
+    return this.orderService.commitPay(body);
+  }
+
+  @Get('business-time')
+  @ApiOperation({ summary: '获取小程序客服信息' })
+  async getBusinessTime() {
+    return this.orderService.getBusinessTime();
+  }
 }

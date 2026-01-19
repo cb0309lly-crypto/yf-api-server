@@ -63,6 +63,19 @@ export class ProductController {
     return this.productService.findOne(params.id);
   }
 
+  @Get('/search/popular')
+  @ApiOperation({ summary: '获取热门搜索词' })
+  async getPopularKeywords(@Query('limit') limit?: string) {
+    const pageLimit = Number(limit) || 10;
+    return this.productService.getPopularKeywords(pageLimit);
+  }
+
+  @Get('/search/history')
+  @ApiOperation({ summary: '获取搜索历史' })
+  async getSearchHistory() {
+    return [];
+  }
+
   @Delete('/:id')
   @ApiOperation({ summary: '删除商品' })
   async remove(@Param() params: ProductIdDto) {

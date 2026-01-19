@@ -14,6 +14,12 @@ export class StatsController {
     return this.statsService.getCardData();
   }
 
+  @Get('mp-home')
+  @ApiOperation({ summary: '获取小程序首页数据' })
+  async getMpHomeData() {
+    return this.statsService.getMpHomeData();
+  }
+
   @Get('line-chart')
   @ApiOperation({ summary: '获取折线图数据' })
   async getLineChartData() {

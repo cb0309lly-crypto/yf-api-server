@@ -52,10 +52,29 @@ export class CategoryService {
   }
 
   getCategoryTree() {
-    return this.categoryRepository.find({
-      where: { status: CategoryStatus.ACTIVE },
-      order: { sort: 'ASC', createdAt: 'DESC' },
-    });
+    return this.categoryRepository
+      .find({
+        where: { status: CategoryStatus.ACTIVE },
+        order: { sort: 'ASC', createdAt: 'DESC' },
+      })
+      .then((list) => {
+        const nodeMap = new Map();
+        const roots = [];
+
+        list.forEach((item) => {
+          nodeMap.set(item.no, { ...item, children: [] });
+        });
+
+        nodeMap.forEach((node) => {
+          if (node.parentId && nodeMap.has(node.parentId)) {
+            nodeMap.get(node.parentId).children.push(node);
+          } else {
+            roots.push(node);
+          }
+        });
+
+        return roots;
+      });
   }
 
   getCategoryProducts(id: string, query) {

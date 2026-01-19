@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { User } from '../entity/user';
+import { Category } from '../entity/category';
+import { Promotion, PromotionStatus } from '../entity/promotion';
 import { Order, OrderStatus } from '../entity/order';
 import { Product } from '../entity/product';
 import { Payment } from '../entity/payment';
@@ -17,6 +19,10 @@ export class StatsService {
     private productRepository: Repository<Product>,
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
+    @InjectRepository(Promotion)
+    private promotionRepository: Repository<Promotion>,
   ) {}
 
   async getCardData() {
@@ -85,5 +91,42 @@ export class StatsService {
       name: item.status,
       value: Number(item.count),
     }));
+  }
+
+  async getMpHomeData() {
+    const [products, categories, promotions] = await Promise.all([
+      this.productRepository.find({
+        order: { createdAt: 'DESC' },
+        take: 6,
+      }),
+      this.categoryRepository.find({
+        order: { sort: 'ASC', createdAt: 'DESC' },
+      }),
+      this.promotionRepository.find({
+        where: { status: PromotionStatus.ACTIVE },
+        order: { startDate: 'DESC' },
+        take: 1,
+      }),
+    ]);
+
+    const swiper = (products || [])
+      .map((item) => item.imgUrl)
+      .filter((img) => !!img);
+
+    const tabList = (categories || [])
+      .filter((item) => !item.parentId || item.categoryLevel === 1)
+      .map((item, index) => ({
+        text: item.name,
+        key: index,
+      }));
+
+    const activityImg =
+      promotions?.[0]?.bannerImage || products?.[0]?.imgUrl || '';
+
+    return {
+      swiper,
+      tabList,
+      activityImg,
+    };
   }
 }
