@@ -14,14 +14,20 @@ export class DeploymentService {
   async create(createDeploymentDto: CreateDeploymentDto) {
     if (createDeploymentDto.isActive) {
       // Deactivate others
-      await this.deploymentRepository.update({ isActive: true }, { isActive: false });
+      await this.deploymentRepository.update(
+        { isActive: true },
+        { isActive: false },
+      );
     }
     const deployment = this.deploymentRepository.create(createDeploymentDto);
     return this.deploymentRepository.save(deployment);
   }
 
   async getActiveDeployment() {
-    return this.deploymentRepository.findOne({ where: { isActive: true }, order: { createdAt: 'DESC' } });
+    return this.deploymentRepository.findOne({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findAll() {

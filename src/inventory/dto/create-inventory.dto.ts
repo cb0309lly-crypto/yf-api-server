@@ -1,6 +1,9 @@
 import { IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateInventoryDto {
+  @IsString({ message: '名称不能为空' })
+  name: string;
+
   @IsString({ message: '商品编号不能为空' })
   productNo: string;
 
@@ -19,9 +22,19 @@ export class CreateInventoryDto {
   @IsNumber({}, { message: '最低库存必须是数字' })
   @Min(0, { message: '最低库存不能小于0' })
   @Max(999999, { message: '最低库存不能超过999999' })
-  minimumStock?: number = 0;
+  minStockLevel?: number = 10;
+
+  @IsOptional()
+  @IsNumber({}, { message: '最大库存必须是数字' })
+  @Min(0, { message: '最大库存不能小于0' })
+  @Max(999999, { message: '最大库存不能超过999999' })
+  maxStockLevel?: number = 100;
 
   @IsOptional()
   @IsString({ message: '仓库位置必须是字符串' })
-  location?: string;
+  warehouseLocation?: string;
+
+  @IsOptional()
+  @IsString({ message: '备注必须是字符串' })
+  remark?: string;
 }

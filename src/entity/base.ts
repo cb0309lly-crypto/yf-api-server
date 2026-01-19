@@ -10,7 +10,7 @@ export abstract class Base extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   no: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
   @CreateDateColumn({ name: 'created_at' })

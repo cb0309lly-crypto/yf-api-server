@@ -16,6 +16,7 @@ import {
   CategoryIdDto,
 } from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('分类管理')
 @ApiBearerAuth()
@@ -35,12 +36,14 @@ export class CategoryController {
     return this.categoryService.findAll(query);
   }
 
+  @Public()
   @Get('tree/list')
   @ApiOperation({ summary: '获取分类树' })
   getCategoryTree() {
     return this.categoryService.getCategoryTree();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: '获取分类详情' })
   findOne(@Param() params: CategoryIdDto) {
@@ -59,6 +62,7 @@ export class CategoryController {
     return this.categoryService.remove(params.id);
   }
 
+  @Public()
   @Get(':id/products')
   @ApiOperation({ summary: '获取分类下的商品' })
   getCategoryProducts(@Param() params: CategoryIdDto, @Query() query: any) {

@@ -64,7 +64,10 @@ export class ProductService {
       qb.andWhere('product.name LIKE :name', { name: `%${name}%` });
     }
     if (categoryNo) {
-      qb.andWhere('product.categoryNo = :categoryNo', { categoryNo });
+      // Validate if categoryNo is a potential UUID or valid ID to prevent 500 errors with JSON strings or short IDs
+      if (typeof categoryNo === 'string' && !categoryNo.includes('{') && !categoryNo.includes('}') && categoryNo.length > 10) {
+        qb.andWhere('product.categoryNo = :categoryNo', { categoryNo });
+      }
     }
     if (status) {
       qb.andWhere('product.status = :status', { status });

@@ -131,12 +131,17 @@ export class StatsService {
         ? configData.swiper
         : (products || []).map((item) => item.imgUrl).filter((img) => !!img);
 
-    const tabList = (categories || [])
+    const categoryTabs = (categories || [])
       .filter((item) => !item.parentId || item.categoryLevel === 1)
-      .map((item, index) => ({
+      .map((item) => ({
         text: item.name,
-        key: index,
+        key: item.no,
       }));
+
+    const tabList = [
+      { text: '精选推荐', key: 0 },
+      ...categoryTabs,
+    ];
 
     const activityImg =
       configData.activityImg ||
@@ -151,7 +156,7 @@ export class StatsService {
     };
   }
 
-  async updateMpHomeData(data: { swiper: string[]; activityImg: string }) {
+  async updateMpHomeData(data: { swiper: any[]; activityImg: string }) {
     let config = await this.configRepository.findOne({
       where: { key: 'mp_home_config' },
     });
@@ -159,6 +164,60 @@ export class StatsService {
       config = new Config();
       config.key = 'mp_home_config';
       config.description = '小程序首页配置';
+    }
+    config.value = JSON.stringify(data);
+    return this.configRepository.save(config);
+  }
+
+  async getMpTabbarData() {
+    const config = await this.configRepository.findOne({
+      where: { key: 'mp_tabbar_config' },
+    });
+    
+    // 默认配置
+    const defaultList = [
+      {
+        icon: 'home',
+        text: '首页',
+        url: 'pages/home/home',
+      },
+      {
+        icon: 'sort',
+        text: '分类',
+        url: 'pages/category/index',
+      },
+      {
+        icon: 'cart',
+        text: '购物车',
+        url: 'pages/cart/index',
+      },
+      {
+        icon: 'person',
+        text: '个人中心',
+        url: 'pages/usercenter/index',
+      },
+    ];
+
+    if (config && config.value) {
+      try {
+        const data = JSON.parse(config.value);
+        return data.list || defaultList;
+      } catch (e) {
+        console.error('Parse mp_tabbar_config error', e);
+      }
+    }
+    return defaultList;
+  }
+
+  async updateMpTabbarData(data: { list: any[] }) {
+    let config = await this.configRepository.findOne({
+      where: { key: 'mp_tabbar_config' },
+    });
+    if (!config) {
+      config = new Config();
+      config.key = 'mp_tabbar_config';
+      config.name = '小程序菜单配置';
+      config.description = '小程序菜单配置';
     }
     config.value = JSON.stringify(data);
     return this.configRepository.save(config);

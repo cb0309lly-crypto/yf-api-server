@@ -22,8 +22,20 @@ export class StatsController {
 
   @Post('mp-home')
   @ApiOperation({ summary: '更新小程序首页数据' })
-  async updateMpHomeData(@Body() body: { swiper: string[]; activityImg: string }) {
+  async updateMpHomeData(@Body() body: { swiper: any[]; activityImg: string }) {
     return this.statsService.updateMpHomeData(body);
+  }
+
+  @Get('mp-tabbar')
+  @ApiOperation({ summary: '获取小程序菜单配置' })
+  async getMpTabbarData() {
+    return this.statsService.getMpTabbarData();
+  }
+
+  @Post('mp-tabbar')
+  @ApiOperation({ summary: '更新小程序菜单配置' })
+  async updateMpTabbarData(@Body() body: { list: any[] }) {
+    return this.statsService.updateMpTabbarData(body);
   }
 
   @Get('line-chart')

@@ -11,7 +11,7 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsString({ message: '父分类编号必须是字符串' })
-  parentNo?: string;
+  parentId?: string;
 
   @IsOptional()
   @IsEnum(CategoryStatus, { message: '分类状态值不正确' })
@@ -22,6 +22,5 @@ export class CreateCategoryDto {
   icon?: string;
 
   @IsOptional()
-  @IsString({ message: '分类图片必须是字符串' })
-  image?: string;
+  sort?: number;
 }

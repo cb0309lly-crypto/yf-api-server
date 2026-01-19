@@ -39,6 +39,9 @@ export class Inventory extends Base {
   @Column({ name: 'warehouse_location', nullable: true })
   warehouseLocation: string;
 
+  @Column({ nullable: true })
+  remark: string;
+
   @Column({ name: 'last_restock_date', nullable: true })
   lastRestockDate: Date;
 

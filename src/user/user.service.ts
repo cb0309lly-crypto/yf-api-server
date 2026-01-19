@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entity/user';
+import { Order } from '../entity/order';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
@@ -11,6 +12,7 @@ import { LoginDto, RegisterDto } from './dto';
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(Order) private orderRepository: Repository<Order>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -221,8 +223,31 @@ export class UserService {
     const skip = (page - 1) * pageSize;
     const [users, total] = await qb.skip(skip).take(pageSize).getManyAndCount();
 
+    // 统计订单数据
+    const userNos = users.map((u) => u.no);
+    let stats: any[] = [];
+    if (userNos.length > 0) {
+      stats = await this.orderRepository
+        .createQueryBuilder('order')
+        .select('order.userNo', 'userNo')
+        .addSelect('COUNT(order.no)', 'orderCount')
+        .addSelect('SUM(order.orderTotal)', 'totalAmount')
+        .where('order.userNo IN (:...userNos)', { userNos })
+        .groupBy('order.userNo')
+        .getRawMany();
+    }
+
+    const list = users.map((user) => {
+      const stat = stats.find((s) => s.userNo === user.no);
+      return {
+        ...user,
+        orderCount: stat ? Number(stat.orderCount) : 0,
+        totalAmount: stat ? Number(stat.totalAmount) : 0,
+      };
+    });
+
     return {
-      list: users,
+      list,
       total,
       page,
       pageSize,
