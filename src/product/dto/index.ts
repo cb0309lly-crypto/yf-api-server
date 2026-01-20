@@ -3,3 +3,4 @@ export { UpdateProductDto } from './update-product.dto';
 export { QueryProductDto } from './query-product.dto';
 export { ProductIdDto } from './product-id.dto';
 export * from './product-detail.dto';
+export * from './batch-import-product.dto';

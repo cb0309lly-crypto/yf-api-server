@@ -16,6 +16,8 @@ import {
   QueryProductDto,
   ProductIdDto,
   ProductDetailDto,
+  BatchImportProductDto,
+  BatchImportResultDto,
 } from './dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -29,6 +31,14 @@ export class ProductController {
   @ApiOperation({ summary: '创建商品' })
   async create(@Body() createProductDto: CreateProductDto): Promise<Product> {
     return this.productService.addProduct(createProductDto);
+  }
+
+  @Post('/batch-import')
+  @ApiOperation({ summary: '批量导入商品' })
+  async batchImport(
+    @Body() batchImportDto: BatchImportProductDto,
+  ): Promise<BatchImportResultDto> {
+    return this.productService.batchImport(batchImportDto.products);
   }
 
   @Put()
