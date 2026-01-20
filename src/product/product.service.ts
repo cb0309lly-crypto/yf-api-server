@@ -82,6 +82,9 @@ export class ProductService {
       qb.andWhere('product.status = :status', { status });
     }
 
+    // 按更新时间降序排序
+    qb.orderBy('product.updatedAt', 'DESC');
+
     const result = await paginate(qb, page, pageSize);
     return result;
   }

@@ -177,8 +177,33 @@ export class OrderService {
     return this.orderRepository.find();
   }
 
-  async findOne(no: string): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { no } });
+  async findOne(no: string): Promise<(Order & { userName?: string; operatorName?: string }) | null> {
+    const order = await this.orderRepository.findOne({
+      where: { no },
+      relations: ['user', 'orderItems', 'orderItems.product'],
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    // 获取操作员名称
+    let operatorName: string | undefined;
+    if (order.operatorNo) {
+      const operator = await this.dataSource
+        .getRepository('User')
+        .createQueryBuilder('user')
+        .where('user.no = :operatorNo', { operatorNo: order.operatorNo })
+        .select(['user.no', 'user.nickname', 'user.authLogin'])
+        .getOne();
+      operatorName = (operator as any)?.nickname || (operator as any)?.authLogin || order.operatorNo;
+    }
+
+    // 使用 Object.assign 保留实体方法
+    return Object.assign(order, {
+      userName: order.user?.nickname || order.user?.authLogin || order.userNo,
+      operatorName,
+    });
   }
 
   async findAllPaged(
@@ -192,8 +217,11 @@ export class OrderService {
     productNo?: string,
     materialNo?: string,
     logisticsNo?: string,
-  ): Promise<PaginationResult<Order>> {
+  ): Promise<PaginationResult<Order & { userName?: string; operatorName?: string }>> {
     const qb = this.orderRepository.createQueryBuilder('order');
+
+    // 关联用户表获取用户名称
+    qb.leftJoinAndSelect('order.user', 'user');
 
     // 关键词搜索
     if (keyword) {
@@ -226,10 +254,40 @@ export class OrderService {
       qb.andWhere('order.logisticsNo = :logisticsNo', { logisticsNo });
     }
 
-    // 按创建时间倒序排列
-    qb.orderBy('order.createdAt', 'DESC');
+    // 按更新时间降序排序
+    qb.orderBy('order.updatedAt', 'DESC');
 
-    return paginate(qb, page, pageSize);
+    const result = await paginate(qb, page, pageSize);
+
+    // 获取所有操作员编号并查询操作员名称
+    const operatorNos = [...new Set(result.list.map((o) => o.operatorNo).filter(Boolean))];
+    const operatorMap = new Map<string, string>();
+
+    if (operatorNos.length > 0) {
+      const operators = await this.dataSource
+        .getRepository('User')
+        .createQueryBuilder('user')
+        .where('user.no IN (:...operatorNos)', { operatorNos })
+        .select(['user.no', 'user.nickname', 'user.authLogin'])
+        .getMany();
+
+      operators.forEach((op: any) => {
+        operatorMap.set(op.no, op.nickname || op.authLogin || op.no);
+      });
+    }
+
+    // 添加用户名称和操作员名称到返回结果
+    const listWithNames = result.list.map((order) =>
+      Object.assign(order, {
+        userName: order.user?.nickname || order.user?.authLogin || order.userNo,
+        operatorName: order.operatorNo ? operatorMap.get(order.operatorNo) || order.operatorNo : undefined,
+      }),
+    );
+
+    return {
+      ...result,
+      list: listWithNames,
+    };
   }
 
   async getMpOrderList(params: {
