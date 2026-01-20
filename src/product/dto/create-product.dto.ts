@@ -68,4 +68,14 @@ export class CreateProductDto {
   @IsOptional()
   @IsString({ message: '订单编号必须是字符串' })
   orderNo?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: '最低购买数量必须是数字' })
+  @Min(1, { message: '最低购买数量不能小于1' })
+  minBuyQuantity?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: '销售单位数量必须是数字' })
+  @Min(1, { message: '销售单位数量不能小于1' })
+  saleUnitQuantity?: number;
 }

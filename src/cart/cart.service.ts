@@ -104,6 +104,17 @@ export class CartService {
       throw new Error('商品不存在');
     }
 
+    // 获取购买限制参数
+    const minBuyQuantity = product.minBuyQuantity || 1; // 最低购买的销售单位数
+    const saleUnitQuantity = product.saleUnitQuantity || 1; // 销售单位数量（步进值）
+    // 实际最低购买数量 = 销售单位数量 × 最低购买单位数
+    const actualMinQuantity = saleUnitQuantity * minBuyQuantity;
+
+    // 校验数量是否为销售单位数量的整数倍
+    if (saleUnitQuantity > 1 && quantity % saleUnitQuantity !== 0) {
+      throw new Error(`该商品每次购买数量必须是 ${saleUnitQuantity} 的整数倍`);
+    }
+
     // 检查是否已存在
     const existingItem = await this.cartRepository.findOne({
       where: { userNo, productNo, status: CartItemStatus.ACTIVE },
@@ -111,11 +122,24 @@ export class CartService {
 
     if (existingItem) {
       // 更新数量
-      existingItem.quantity += quantity;
+      const newQuantity = existingItem.quantity + quantity;
+      // 校验更新后的数量是否满足最低购买数量
+      if (newQuantity < actualMinQuantity) {
+        throw new Error(`该商品最低购买数量为 ${actualMinQuantity} 件`);
+      }
+      // 校验更新后数量是否为销售单位的整数倍
+      if (saleUnitQuantity > 1 && newQuantity % saleUnitQuantity !== 0) {
+        throw new Error(`该商品购买数量必须是 ${saleUnitQuantity} 的整数倍`);
+      }
+      existingItem.quantity = newQuantity;
       const unitPrice = this.parseNumber(existingItem.unitPrice);
       existingItem.totalPrice = unitPrice * existingItem.quantity;
       return this.cartRepository.save(existingItem);
     } else {
+      // 校验新添加数量是否满足最低购买数量
+      if (quantity < actualMinQuantity) {
+        throw new Error(`该商品最低购买数量为 ${actualMinQuantity} 件`);
+      }
       // 创建新项目
       const productPrice = this.parseNumber(product.price);
       const cartItem = this.cartRepository.create({

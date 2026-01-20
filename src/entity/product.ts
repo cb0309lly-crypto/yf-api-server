@@ -74,6 +74,12 @@ export class Product extends Base {
   @Column({ name: 'order_no', nullable: true })
   orderNo: string;
 
+  @Column({ name: 'min_buy_quantity', type: 'int', default: 1 })
+  minBuyQuantity: number;
+
+  @Column({ name: 'sale_unit_quantity', type: 'int', default: 1 })
+  saleUnitQuantity: number;
+
   @Column({ name: 'is_delete', default: false })
   isDelete: boolean;
 
