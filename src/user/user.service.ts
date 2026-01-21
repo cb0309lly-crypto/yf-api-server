@@ -6,7 +6,7 @@ import { Order } from '../entity/order';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
-import { LoginDto, RegisterDto } from './dto';
+import { LoginDto, RegisterDto, UpdateUserInfoDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -265,12 +265,50 @@ export class UserService {
       return null;
     }
 
+    // 返回小程序需要的字段格式
     return {
       buttons: [],
       roles: (user.roles || []).map((r) => r.code).filter(Boolean),
       userId: user.no,
       userName:
         user.nickname || user.name || user.authLogin || user.phone || user.no,
+      // 小程序需要的字段
+      avatarUrl: user.avatar || '',
+      nickName: user.nickname || user.name || '微信用户',
+      gender: user.gender || 0,
+      phoneNumber: user.phone || '',
+    };
+  }
+
+  // 更新用户信息
+  async updateUserInfo(userNo: string, updateData: UpdateUserInfoDto) {
+    const user = await this.userRepository.findOne({ where: { no: userNo } });
+    if (!user) {
+      return null;
+    }
+
+    // 映射字段名
+    if (updateData.nickName !== undefined) {
+      user.nickname = updateData.nickName;
+    }
+    if (updateData.avatarUrl !== undefined) {
+      user.avatar = updateData.avatarUrl;
+    }
+    if (updateData.gender !== undefined) {
+      user.gender = updateData.gender;
+    }
+    if (updateData.phoneNumber !== undefined) {
+      user.phone = updateData.phoneNumber;
+    }
+
+    await this.userRepository.save(user);
+
+    // 返回更新后的用户信息
+    return {
+      avatarUrl: user.avatar || '',
+      nickName: user.nickname || user.name || '微信用户',
+      gender: user.gender || 0,
+      phoneNumber: user.phone || '',
     };
   }
 

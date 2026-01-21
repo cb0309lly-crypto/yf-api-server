@@ -20,6 +20,7 @@ import {
   WxLoginDto,
   OpenIdLoginDto,
   UserQueryDto,
+  UpdateUserInfoDto,
 } from './dto';
 import axios from 'axios';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -64,8 +65,8 @@ export class UserController {
   async wxLogin(@Body() body: WxLoginDto) {
     const { code, nickname, avatar } = body;
     // 用 code 换 openid
-    const appid = 'wx7631df08d9432644';
-    const secret = 'fddaf29f791eb6cf59914676b9cc4ac0';
+    const appid = 'wx8da20f4d09ea3763';
+    const secret = '77b393fd5b7fb562270014d2c81ee09a';
     const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${code}&grant_type=authorization_code`;
     const res = await axios.get(url);
     const { openid } = res.data;
@@ -79,6 +80,12 @@ export class UserController {
         openId: openid,
         nickname,
         avatar,
+      });
+    } else {
+      // 如果用户已存在，更新昵称和头像
+      await this.userService.updateUserInfo(user.no, {
+        nickName: nickname,
+        avatarUrl: avatar,
       });
     }
     // 生成token
@@ -177,6 +184,24 @@ export class UserController {
   @ApiOperation({ summary: '获取用户信息' })
   async getUserInfo(@Req() req: AuthRequest) {
     const userInfo = await this.userService.getAuthUserInfo(req.user.no);
+    if (!userInfo) {
+      throw new UnauthorizedException('用户不存在');
+    }
+    return userInfo;
+  }
+
+  @ApiBearerAuth()
+  @Put('user_info')
+  @ApiOperation({ summary: '更新用户信息' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateUserInfo(
+    @Req() req: AuthRequest,
+    @Body() updateData: UpdateUserInfoDto,
+  ) {
+    const userInfo = await this.userService.updateUserInfo(
+      req.user.no,
+      updateData,
+    );
     if (!userInfo) {
       throw new UnauthorizedException('用户不存在');
     }

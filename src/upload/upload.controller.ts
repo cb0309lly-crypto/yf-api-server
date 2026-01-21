@@ -48,4 +48,35 @@ export class UploadController {
     const url = await this.uploadService.uploadFile(file);
     return { url };
   }
+
+  @Post('image')
+  @ApiOperation({ summary: '上传图片' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          // Max size: 10MB
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 10 }),
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    const url = await this.uploadService.uploadFile(file);
+    return { url };
+  }
 }
