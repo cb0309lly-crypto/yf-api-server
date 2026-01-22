@@ -68,7 +68,7 @@ export class PaymentController {
   @Post('refund')
   @ApiOperation({ summary: '处理退款' })
   refundPayment(@Body() body: any) {
-    return this.paymentService.refundPayment(body);
+    return this.paymentService.processRefund(body);
   }
 
   @Get('user/:userId')

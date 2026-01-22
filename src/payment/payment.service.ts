@@ -1,16 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Payment, PaymentStatus } from '../entity/payment';
 import { Order, OrderStatus } from '../entity/order';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(body) {
@@ -67,52 +70,160 @@ export class PaymentService {
     });
   }
 
-  processPayment(body) {
+  /**
+   * 处理支付（带事务）
+   */
+  async processPayment(body) {
     const { orderNo, userNo, amount, method } = body;
 
-    const payment = this.paymentRepository.create({
-      orderNo,
-      userNo,
-      amount,
-      method,
-      status: PaymentStatus.PROCESSING,
-    });
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 查询订单并验证状态
+      const order = await manager.findOne(Order, {
+        where: { no: orderNo },
+      });
 
-    return this.paymentRepository.save(payment).then((savedPayment) => {
-      // 模拟支付处理
-      setTimeout(async () => {
-        await this.paymentRepository.update(savedPayment.no, {
-          status: PaymentStatus.SUCCESS,
-          paymentTime: new Date(),
-          transactionId: `TXN_${Date.now()}`,
-        });
+      if (!order) {
+        throw new BadRequestException('订单不存在');
+      }
 
-        // 支付成功后更新订单状态为"待发货"
-        await this.orderRepository.update(
-          { no: orderNo },
-          { orderStatus: OrderStatus.PAIED },
+      if (order.orderStatus !== OrderStatus.UNPAY) {
+        throw new BadRequestException(
+          `订单状态为 ${order.orderStatus}，无法支付`,
         );
-      }, 1000);
+      }
+
+      // 2. 验证金额
+      if (Math.abs(order.orderTotal - amount) > 0.01) {
+        throw new BadRequestException(
+          `支付金额不匹配，订单金额: ${order.orderTotal}, 支付金额: ${amount}`,
+        );
+      }
+
+      // 3. 检查是否已有成功的支付记录（幂等性）
+      const existingPayment = await manager.findOne(Payment, {
+        where: {
+          orderNo,
+          status: PaymentStatus.SUCCESS,
+        },
+      });
+
+      if (existingPayment) {
+        this.logger.warn(`订单 ${orderNo} 已支付，返回已有支付记录`);
+        return existingPayment;
+      }
+
+      // 4. 创建支付记录
+      const payment = manager.create(Payment, {
+        orderNo,
+        userNo,
+        amount,
+        method,
+        status: PaymentStatus.PROCESSING,
+        transactionId: `TXN_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      });
+
+      const savedPayment = await manager.save(Payment, payment);
+      this.logger.log(`支付记录创建成功: ${savedPayment.no}`);
+
+      // 5. 模拟支付处理（实际应调用第三方支付接口）
+      // 这里直接标记为成功
+      savedPayment.status = PaymentStatus.SUCCESS;
+      savedPayment.paymentTime = new Date();
+      await manager.save(Payment, savedPayment);
+
+      // 6. 更新订单状态为"已支付"
+      order.orderStatus = OrderStatus.PAIED;
+      await manager.save(Order, order);
+
+      this.logger.log(
+        `支付处理成功: 订单 ${orderNo}, 金额 ${amount}, 交易号 ${savedPayment.transactionId}`,
+      );
 
       return savedPayment;
     });
   }
 
-  refundPayment(body) {
+  /**
+   * 处理退款（带事务）
+   */
+  async processRefund(body) {
     const { paymentId, refundAmount, reason } = body;
 
-    return this.paymentRepository
-      .findOne({ where: { no: paymentId } })
-      .then((payment) => {
-        if (payment && payment.status === PaymentStatus.SUCCESS) {
-          return this.paymentRepository.update(paymentId, {
-            status: PaymentStatus.REFUNDED,
-            refundAmount,
-            refundTime: new Date(),
-            description: reason,
-          });
-        }
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 查询支付记录
+      const payment = await manager.findOne(Payment, {
+        where: { no: paymentId },
+        relations: ['order'],
       });
+
+      if (!payment) {
+        throw new BadRequestException('支付记录不存在');
+      }
+
+      // 2. 验证支付状态
+      if (payment.status !== PaymentStatus.SUCCESS) {
+        throw new BadRequestException(
+          `支付状态为 ${payment.status}，无法退款`,
+        );
+      }
+
+      // 3. 验证退款金额
+      if (refundAmount > payment.amount) {
+        throw new BadRequestException(
+          `退款金额 ${refundAmount} 超过支付金额 ${payment.amount}`,
+        );
+      }
+
+      // 4. 检查是否已退款（通过refundAmount判断）
+      if (payment.refundAmount && payment.refundAmount > 0) {
+        this.logger.warn(`支付记录 ${paymentId} 已退款`);
+        return payment;
+      }
+
+      // 5. 更新支付记录
+      payment.status = PaymentStatus.REFUNDED;
+      payment.refundAmount = refundAmount;
+      payment.refundTime = new Date();
+      payment.description = reason;
+      await manager.save(Payment, payment);
+
+      this.logger.log(
+        `退款处理成功: 支付记录 ${paymentId}, 退款金额 ${refundAmount}`,
+      );
+
+      // 6. 更新订单状态（如果需要）
+      if (payment.order) {
+        const order = await manager.findOne(Order, {
+          where: { no: payment.orderNo },
+          relations: ['orderItems'],
+        });
+
+        if (order) {
+          // 恢复库存
+          for (const item of order.orderItems) {
+            await manager
+              .createQueryBuilder()
+              .update('yf_db_inventory')
+              .set({
+                quantity: () => `quantity + ${item.quantity}`,
+              })
+              .where('product_no = :productNo', { productNo: item.productNo })
+              .execute();
+
+            this.logger.log(
+              `库存恢复成功: 商品 ${item.productNo}, 数量 ${item.quantity}`,
+            );
+          }
+
+          // 更新订单状态
+          order.orderStatus = OrderStatus.CANCELED;
+          order.remark = `退款: ${reason}`;
+          await manager.save(Order, order);
+        }
+      }
+
+      return payment;
+    });
   }
 
   getUserPayments(userId: string, query) {

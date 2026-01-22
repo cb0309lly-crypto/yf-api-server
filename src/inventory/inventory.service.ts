@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Inventory, InventoryStatus } from '../entity/inventory';
 import { PaginationResult, paginate } from '../common/utils/pagination.util';
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   constructor(
     @InjectRepository(Inventory)
     private inventoryRepository: Repository<Inventory>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(body) {
@@ -134,5 +137,97 @@ export class InventoryService {
         status: InventoryStatus.IN_STOCK,
       })
       .getMany();
+  }
+
+  /**
+   * 原子库存扣减（使用乐观锁）
+   * @param productNo 商品编号
+   * @param quantity 扣减数量
+   * @returns 是否成功
+   */
+  async decreaseStock(productNo: string, quantity: number): Promise<boolean> {
+    if (quantity <= 0) {
+      throw new BadRequestException('扣减数量必须大于0');
+    }
+
+    const result = await this.dataSource
+      .createQueryBuilder()
+      .update(Inventory)
+      .set({
+        quantity: () => `quantity - ${quantity}`,
+      })
+      .where('product_no = :productNo', { productNo })
+      .andWhere('quantity >= :quantity', { quantity })
+      .execute();
+
+    const success = (result.affected ?? 0) > 0;
+
+    if (success) {
+      this.logger.log(
+        `库存扣减成功: 商品 ${productNo}, 数量 ${quantity}`,
+      );
+    } else {
+      this.logger.warn(
+        `库存扣减失败: 商品 ${productNo}, 数量 ${quantity}, 可能库存不足`,
+      );
+    }
+
+    return success;
+  }
+
+  /**
+   * 原子库存增加
+   * @param productNo 商品编号
+   * @param quantity 增加数量
+   * @returns 是否成功
+   */
+  async increaseStock(productNo: string, quantity: number): Promise<boolean> {
+    if (quantity <= 0) {
+      throw new BadRequestException('增加数量必须大于0');
+    }
+
+    const result = await this.dataSource
+      .createQueryBuilder()
+      .update(Inventory)
+      .set({
+        quantity: () => `quantity + ${quantity}`,
+        lastRestockDate: new Date(),
+      })
+      .where('product_no = :productNo', { productNo })
+      .execute();
+
+    const success = (result.affected ?? 0) > 0;
+
+    if (success) {
+      this.logger.log(
+        `库存增加成功: 商品 ${productNo}, 数量 ${quantity}`,
+      );
+    } else {
+      this.logger.warn(
+        `库存增加失败: 商品 ${productNo}, 数量 ${quantity}, 可能商品不存在`,
+      );
+    }
+
+    return success;
+  }
+
+  /**
+   * 检查库存是否充足
+   * @param productNo 商品编号
+   * @param quantity 需要数量
+   * @returns 是否充足
+   */
+  async checkStock(productNo: string, quantity: number): Promise<boolean> {
+    const inventory = await this.inventoryRepository.findOne({
+      where: { productNo },
+    });
+
+    if (!inventory) {
+      return false;
+    }
+
+    const availableQuantity =
+      inventory.quantity - (inventory.reservedQuantity || 0);
+    return availableQuantity >= quantity;
   }
 }

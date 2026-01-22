@@ -57,115 +57,229 @@ export class OrderService {
       );
 
       for (const order of timeoutOrders) {
-        // 在实际业务中，可能需要归还库存
-        // 这里简单实现：更新状态为已取消
-        await this.orderRepository.update(order.no, {
-          orderStatus: OrderStatus.CANCELED,
-          remark: 'Order timeout auto-cancelled',
-        });
-
-        // 归还库存逻辑 (可选)
-        // for (const item of order.orderItems) {
-        //   await this.inventoryService.restock(item.productNo, item.quantity);
-        // }
+        try {
+          await this.cancelOrder(order.no, '订单超时自动取消');
+        } catch (error) {
+          this.logger.error(
+            `Failed to cancel timeout order ${order.no}:`,
+            error,
+          );
+        }
       }
     }
   }
 
-  async addOrder(data: CreateOrderDto & { userNo: string }): Promise<Order> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  /**
+   * 取消订单（带事务和库存恢复）
+   */
+  async cancelOrder(orderNo: string, reason: string): Promise<Order> {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 查询订单
+      const order = await manager.findOne(Order, {
+        where: { no: orderNo },
+        relations: ['orderItems'],
+      });
 
-    try {
-      // 1. 验证优惠券
+      if (!order) {
+        throw new BadRequestException('订单不存在');
+      }
+
+      // 2. 检查订单状态
+      if (
+        order.orderStatus !== OrderStatus.UNPAY &&
+        order.orderStatus !== OrderStatus.ORDERED
+      ) {
+        throw new BadRequestException(
+          `订单状态为 ${order.orderStatus}，无法取消`,
+        );
+      }
+
+      // 3. 恢复库存
+      for (const item of order.orderItems) {
+        const result = await manager
+          .createQueryBuilder()
+          .update('yf_db_inventory')
+          .set({
+            quantity: () => `quantity + ${item.quantity}`,
+          })
+          .where('product_no = :productNo', { productNo: item.productNo })
+          .execute();
+
+        if (result.affected === 0) {
+          this.logger.warn(
+            `库存恢复失败: 商品 ${item.productNo} 可能不存在库存记录`,
+          );
+        } else {
+          this.logger.log(
+            `库存恢复成功: 商品 ${item.productNo}, 数量 ${item.quantity}`,
+          );
+        }
+      }
+
+      // 4. 更新订单状态
+      order.orderStatus = OrderStatus.CANCELED;
+      order.remark = reason;
+      const updatedOrder = await manager.save(Order, order);
+
+      this.logger.log(`订单取消成功: ${orderNo}, 原因: ${reason}`);
+
+      return updatedOrder;
+    });
+  }
+
+  async addOrder(data: CreateOrderDto & { userNo: string }): Promise<Order> {
+    // 使用事务确保数据一致性
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 验证并计算订单金额
       let discountAmount = 0;
       const orderTotal = data.orderTotal ?? 0;
+
+      // 2. 验证优惠券（如果有）
       if (data.couponId) {
-        // Try finding by ID if code lookup fails or implement dedicated ID check
-        // For now assuming couponService.validateCoupon handles logic or we extend it
-        // Let's rely on a direct check for better safety in transaction
         const coupon = await this.couponService.findOne(data.couponId);
         if (!coupon || coupon.status !== 'active') {
-          // Assuming 'active' is the status string value
-          // If strict check needed: throw new BadRequestException('优惠券不可用');
-        } else {
-          // Simple discount calculation
-          if (coupon.type === CouponType.FIXED_AMOUNT) {
-            discountAmount = coupon.value ?? 0;
-          } else if (coupon.type === CouponType.PERCENTAGE) {
-            discountAmount = orderTotal * ((coupon.value ?? 0) / 100);
-          }
+          throw new BadRequestException('优惠券不可用');
+        }
+
+        // 计算折扣金额
+        if (coupon.type === CouponType.FIXED_AMOUNT) {
+          discountAmount = coupon.value ?? 0;
+        } else if (coupon.type === CouponType.PERCENTAGE) {
+          discountAmount = orderTotal * ((coupon.value ?? 0) / 100);
+        }
+
+        // 验证优惠券使用条件
+        if (coupon.minimumAmount && orderTotal < coupon.minimumAmount) {
+          throw new BadRequestException(
+            `订单金额需满${coupon.minimumAmount}元才能使用此优惠券`,
+          );
         }
       }
 
-      // 2. 创建订单对象
-      const order = this.orderRepository.create({
-        ...data,
-        orderTotal,
-        name: `${data.userNo}-order-${Date.now()}`,
+      // 3. 验证商品和库存
+      if (!data.items || data.items.length === 0) {
+        throw new BadRequestException('订单项不能为空');
+      }
+
+      for (const item of data.items) {
+        // 验证商品存在
+        const product = await manager.findOne(Product, {
+          where: { no: item.productNo },
+        });
+        if (!product) {
+          throw new BadRequestException(`商品 ${item.productNo} 不存在`);
+        }
+
+        // 验证库存
+        const inventory = await this.inventoryService.getProductInventory(
+          item.productNo,
+        );
+        if (!inventory) {
+          throw new BadRequestException(`商品 ${item.productNo} 库存不存在`);
+        }
+
+        // 检查可用库存
+        const availableQuantity =
+          inventory.quantity - (inventory.reservedQuantity || 0);
+        if (availableQuantity < item.quantity) {
+          throw new BadRequestException(
+            `商品 ${item.productNo} 库存不足，需要 ${item.quantity}，可用 ${availableQuantity}`,
+          );
+        }
+      }
+
+      // 4. 扣减库存（原子操作）
+      for (const item of data.items) {
+        const result = await manager
+          .createQueryBuilder()
+          .update('yf_db_inventory')
+          .set({
+            quantity: () => `quantity - ${item.quantity}`,
+          })
+          .where('product_no = :productNo', { productNo: item.productNo })
+          .andWhere('quantity >= :quantity', { quantity: item.quantity })
+          .execute();
+
+        if (result.affected === 0) {
+          throw new BadRequestException(
+            `商品 ${item.productNo} 库存扣减失败，可能库存不足`,
+          );
+        }
+
+        this.logger.log(
+          `库存扣减成功: 商品 ${item.productNo}, 数量 ${item.quantity}`,
+        );
+      }
+
+      // 5. 创建订单
+      const readableOrderNo = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      const finalTotal = Math.max(0, orderTotal - discountAmount);
+
+      const order = manager.create(Order, {
+        name: readableOrderNo,
+        userNo: data.userNo,
+        receiverName: data.receiverName,
+        receiverPhone: data.receiverPhone,
+        shipAddress: data.shipAddress,
+        orderTotal: finalTotal,
         orderStatus: OrderStatus.UNPAY,
+        remark: data.remark,
+        description: data.couponId
+          ? `使用优惠券，优惠 ${discountAmount} 元`
+          : undefined,
       });
-      const savedOrder = await queryRunner.manager.save(order);
 
-      // 3. 处理订单项与扣减库存
-      if (data.items && data.items.length > 0) {
-        for (const item of data.items) {
-          // 扣减库存 (Using InventoryService logic but within transaction if possible,
-          // or ensuring InventoryService operations are atomic)
-          // Since InventoryService.reserve uses specific UPDATE query, it's safer.
-          // However, for strict transaction consistency, better to use queryRunner.
-          // For now, calling service.reserve (optimistic locking pattern or atomic update)
+      const savedOrder = await manager.save(Order, order);
+      this.logger.log(`订单创建成功: ${savedOrder.no}`);
 
-          // Get inventory ID by productNo (assuming 1:1 for simplicity or pick first)
-          const inventory = await this.inventoryService.getProductInventory(
-            item.productNo,
-          );
-          if (!inventory) {
-            throw new BadRequestException(`商品 ${item.productNo} 库存不存在`);
-          }
+      // 6. 创建订单项
+      for (const item of data.items) {
+        const product = await manager.findOne(Product, {
+          where: { no: item.productNo },
+        });
 
-          const result = await this.inventoryService.reserve(
-            inventory.no,
-            item.quantity,
-          );
-          if (result.affected === 0) {
-            throw new BadRequestException(`商品 ${item.productNo} 库存不足`);
-          }
+        const unitPrice = item.price || product?.price || 0;
+        const totalPrice = unitPrice * item.quantity;
 
-          // Create OrderItem
-          const unitPrice = item.price;
-          const totalPrice = unitPrice * item.quantity;
-          const orderItem = this.orderItemRepository.create({
-            name: `${savedOrder.no}-item-${item.productNo}`,
-            orderNo: savedOrder.no,
-            productNo: item.productNo,
-            quantity: item.quantity,
-            unitPrice,
-            totalPrice,
-            discountAmount: 0,
-            finalPrice: totalPrice,
-          });
-          await queryRunner.manager.save(orderItem);
-        }
+        const orderItem = manager.create(OrderItem, {
+          name: `${savedOrder.no}-item-${item.productNo}`,
+          orderNo: savedOrder.no,
+          productNo: item.productNo,
+          quantity: item.quantity,
+          unitPrice,
+          totalPrice,
+          discountAmount: 0,
+          finalPrice: totalPrice,
+        });
+
+        await manager.save(OrderItem, orderItem);
       }
 
-      // 4. 核销优惠券
+      this.logger.log(`订单项创建成功，共 ${data.items.length} 项`);
+
+      // 7. 核销优惠券（如果有）
       if (data.couponId) {
         await this.couponService.useCoupon({
           couponId: data.couponId,
           orderNo: savedOrder.no,
         });
+        this.logger.log(`优惠券核销成功: ${data.couponId}`);
       }
 
-      await queryRunner.commitTransaction();
+      // 8. 创建初始支付记录
+      const payment = manager.create(Payment, {
+        orderNo: savedOrder.no,
+        userNo: data.userNo,
+        amount: finalTotal,
+        status: PaymentStatus.PENDING,
+        method: PaymentMethod.WECHAT,
+      });
+      await manager.save(Payment, payment);
+
+      this.logger.log(`订单创建完成: ${savedOrder.no}, 总金额: ${finalTotal}`);
+
       return savedOrder;
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   async updateOrder(data: Partial<Order>): Promise<Order> {

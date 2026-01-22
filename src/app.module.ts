@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -9,6 +10,7 @@ import { SystemModule } from './system/system.module';
 import { ReceiverModule } from './receiver/receiver.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyModule } from './company/company.module';
+import configuration from './config/configuration';
 
 // 新增模块
 import { CategoryModule } from './category/category.module';
@@ -35,17 +37,32 @@ import { DeploymentModule } from './deployment/deployment.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'pgm-bp102n397uomya2gko.pg.rds.aliyuncs.com',
-      // host: 'localhost',
-      port: 5432,
-      username: 'yf_pg',
-      password: 'Cb@920309',
-      database: 'yf',
-      synchronize: true,
-      // logging: true,
-      entities: [__dirname + '/entity/*{.ts,.js}'],
+    // 配置模块 - 必须放在最前面
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
+    }),
+    // 数据库模块 - 使用ConfigService
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const dbConfig = configService.get('database');
+        return {
+          type: dbConfig.type,
+          host: dbConfig.host,
+          port: dbConfig.port,
+          username: dbConfig.username,
+          password: dbConfig.password,
+          database: dbConfig.database,
+          synchronize: dbConfig.synchronize,
+          logging: dbConfig.logging,
+          entities: [__dirname + '/entity/*{.ts,.js}'],
+        };
+      },
     }),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),

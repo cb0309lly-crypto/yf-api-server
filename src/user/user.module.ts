@@ -8,6 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { jwtConstants } from './auth.constants';
+import { WechatConfig } from '../config/wechat.config';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { jwtConstants } from './auth.constants';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy],
+  providers: [UserService, JwtStrategy, WechatConfig],
   exports: [UserService],
 })
 export class UserModule {}

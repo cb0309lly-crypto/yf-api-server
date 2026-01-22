@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, VersionColumn } from 'typeorm';
 import { Base } from './base';
 import { Product } from './product';
 
@@ -47,6 +47,9 @@ export class Inventory extends Base {
 
   @Column({ name: 'next_restock_date', nullable: true })
   nextRestockDate: Date;
+
+  @VersionColumn()
+  version: number;
 
   @ManyToOne(() => Product, (product) => product.inventories)
   @JoinColumn({ name: 'product_no' })

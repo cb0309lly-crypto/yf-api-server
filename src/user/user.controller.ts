@@ -24,6 +24,7 @@ import {
 } from './dto';
 import axios from 'axios';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { WechatConfig } from '../config/wechat.config';
 
 interface AuthRequest extends Request {
   user: {
@@ -35,7 +36,10 @@ interface AuthRequest extends Request {
 @ApiTags('用户认证')
 @Controller('auth')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly wechatConfig: WechatConfig,
+  ) {}
 
   @Public()
   @Post('/login')
@@ -64,10 +68,8 @@ export class UserController {
   @ApiOperation({ summary: '微信登录' })
   async wxLogin(@Body() body: WxLoginDto) {
     const { code, nickname, avatar } = body;
-    // 用 code 换 openid
-    const appid = 'wx8da20f4d09ea3763';
-    const secret = '77b393fd5b7fb562270014d2c81ee09a';
-    const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${code}&grant_type=authorization_code`;
+    // 用 code 换 openid - 使用配置文件
+    const url = this.wechatConfig.getCode2SessionUrl(code);
     const res = await axios.get(url);
     const { openid } = res.data;
     if (!openid) {

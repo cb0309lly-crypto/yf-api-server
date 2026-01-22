@@ -26,3 +26,5 @@ import { Config } from '../entity/config';
   providers: [StatsService],
 })
 export class StatsModule {}
+
+
