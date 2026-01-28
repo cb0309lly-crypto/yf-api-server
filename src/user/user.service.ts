@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entity/user';
 import { Order } from '../entity/order';
+import { Role } from '../entity/role';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
@@ -13,6 +14,7 @@ export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Order) private orderRepository: Repository<Order>,
+    @InjectRepository(Role) private roleRepository: Repository<Role>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -265,10 +267,46 @@ export class UserService {
       return null;
     }
 
-    // 返回小程序需要的字段格式
+    // 获取用户的所有角色编码
+    const roleCodes = (user.roles || []).map((r) => r.code).filter(Boolean);
+
+    // 获取用户的所有按钮权限（从角色关联的菜单中提取）
+    const buttons: string[] = [];
+    
+    // 如果有角色，获取角色关联的菜单和按钮权限
+    if (user.roles && user.roles.length > 0) {
+      for (const role of user.roles) {
+        try {
+          const roleWithMenus = await this.roleRepository.findOne({
+            where: { no: role.no },
+            relations: { menus: true },
+          });
+
+          if (roleWithMenus?.menus) {
+            for (const menu of roleWithMenus.menus) {
+              // 假设 menu 有 buttons 字段存储按钮权限（JSON 字符串）
+              if (menu.buttons) {
+                try {
+                  const menuButtons = JSON.parse(menu.buttons);
+                  if (Array.isArray(menuButtons)) {
+                    buttons.push(...menuButtons.map((b) => b.code || b));
+                  }
+                } catch (e) {
+                  // 忽略 JSON 解析错误
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // 忽略查询错误
+        }
+      }
+    }
+
+    // 返回小程序和后台管理需要的字段格式
     return {
-      buttons: [],
-      roles: (user.roles || []).map((r) => r.code).filter(Boolean),
+      buttons: [...new Set(buttons)], // 去重
+      roles: roleCodes,
       userId: user.no,
       userName:
         user.nickname || user.name || user.authLogin || user.phone || user.no,

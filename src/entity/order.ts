@@ -28,7 +28,14 @@ export class Order extends Base {
   @Column({ name: 'ship_address', nullable: true })
   shipAddress: string;
 
-  @Column({ name: 'order_total', nullable: true })
+  @Column({
+    name: 'order_total',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+    nullable: true,
+  })
   orderTotal: number;
 
   @Column({

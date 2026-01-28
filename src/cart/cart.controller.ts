@@ -83,6 +83,12 @@ export class CartController {
     return this.cartService.clearCart(body.userNo);
   }
 
+  @Post('clear-selected')
+  @ApiOperation({ summary: '清空已选中的购物车商品' })
+  clearSelectedCart(@Body() body: ClearCartDto) {
+    return this.cartService.clearSelectedCart(body.userNo);
+  }
+
   @Post('update-quantity')
   @ApiOperation({ summary: '更新购物车商品数量' })
   updateQuantity(@Body() body: UpdateQuantityDto) {

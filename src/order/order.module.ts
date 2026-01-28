@@ -10,6 +10,7 @@ import { Receiver } from '../entity/receiver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InventoryModule } from '../inventory/inventory.module';
 import { CouponModule } from '../coupon/coupon.module';
+import { CartModule } from '../cart/cart.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CouponModule } from '../coupon/coupon.module';
     ]),
     InventoryModule,
     CouponModule,
+    CartModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

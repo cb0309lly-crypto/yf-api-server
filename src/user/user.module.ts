@@ -3,6 +3,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { User } from '../entity/user';
 import { Order } from '../entity/order';
+import { Role } from '../entity/role';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -12,7 +13,7 @@ import { WechatConfig } from '../config/wechat.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Order]),
+    TypeOrmModule.forFeature([User, Order, Role]),
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,

@@ -10,9 +10,15 @@ import { Receiver } from '../entity/receiver';
 import { PaginationResult, paginate } from '../common/utils/pagination.util';
 import { InventoryService } from '../inventory/inventory.service';
 import { CouponService } from '../coupon/coupon.service';
+import { CartService } from '../cart/cart.service';
 import { CouponType } from '../entity/coupon';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import {
+  InsufficientStockException,
+  CouponInvalidException,
+  CouponConditionNotMetException,
+} from '../common/exceptions';
 
 @Injectable()
 export class OrderService {
@@ -33,6 +39,7 @@ export class OrderService {
     private readonly receiverRepository: Repository<Receiver>,
     private readonly inventoryService: InventoryService,
     private readonly couponService: CouponService,
+    private readonly cartService: CartService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -132,26 +139,31 @@ export class OrderService {
     return this.dataSource.transaction(async (manager) => {
       // 1. 验证并计算订单金额
       let discountAmount = 0;
-      const orderTotal = data.orderTotal ?? 0;
+      const orderTotal = this.roundToTwoDecimals(data.orderTotal ?? 0);
 
       // 2. 验证优惠券（如果有）
       if (data.couponId) {
         const coupon = await this.couponService.findOne(data.couponId);
         if (!coupon || coupon.status !== 'active') {
-          throw new BadRequestException('优惠券不可用');
+          throw new CouponInvalidException(
+            data.couponId,
+            '优惠券不可用或已失效',
+          );
         }
 
         // 计算折扣金额
         if (coupon.type === CouponType.FIXED_AMOUNT) {
-          discountAmount = coupon.value ?? 0;
+          discountAmount = this.roundToTwoDecimals(coupon.value ?? 0);
         } else if (coupon.type === CouponType.PERCENTAGE) {
-          discountAmount = orderTotal * ((coupon.value ?? 0) / 100);
+          discountAmount = this.roundToTwoDecimals(orderTotal * ((coupon.value ?? 0) / 100));
         }
 
         // 验证优惠券使用条件
         if (coupon.minimumAmount && orderTotal < coupon.minimumAmount) {
-          throw new BadRequestException(
-            `订单金额需满${coupon.minimumAmount}元才能使用此优惠券`,
+          throw new CouponConditionNotMetException(
+            data.couponId,
+            coupon.minimumAmount,
+            orderTotal,
           );
         }
       }
@@ -182,8 +194,10 @@ export class OrderService {
         const availableQuantity =
           inventory.quantity - (inventory.reservedQuantity || 0);
         if (availableQuantity < item.quantity) {
-          throw new BadRequestException(
-            `商品 ${item.productNo} 库存不足，需要 ${item.quantity}，可用 ${availableQuantity}`,
+          throw new InsufficientStockException(
+            item.productNo,
+            item.quantity,
+            availableQuantity,
           );
         }
       }
@@ -201,8 +215,18 @@ export class OrderService {
           .execute();
 
         if (result.affected === 0) {
-          throw new BadRequestException(
-            `商品 ${item.productNo} 库存扣减失败，可能库存不足`,
+          // 获取当前库存信息用于错误提示
+          const currentInventory =
+            await this.inventoryService.getProductInventory(item.productNo);
+          const available = currentInventory
+            ? currentInventory.quantity -
+              (currentInventory.reservedQuantity || 0)
+            : 0;
+
+          throw new InsufficientStockException(
+            item.productNo,
+            item.quantity,
+            available,
           );
         }
 
@@ -213,7 +237,7 @@ export class OrderService {
 
       // 5. 创建订单
       const readableOrderNo = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
-      const finalTotal = Math.max(0, orderTotal - discountAmount);
+      const finalTotal = this.roundToTwoDecimals(Math.max(0, orderTotal - discountAmount));
 
       const order = manager.create(Order, {
         name: readableOrderNo,
@@ -225,7 +249,7 @@ export class OrderService {
         orderStatus: OrderStatus.UNPAY,
         remark: data.remark,
         description: data.couponId
-          ? `使用优惠券，优惠 ${discountAmount} 元`
+          ? `使用优惠券，优惠 ${discountAmount.toFixed(2)} 元`
           : undefined,
       });
 
@@ -238,8 +262,8 @@ export class OrderService {
           where: { no: item.productNo },
         });
 
-        const unitPrice = item.price || product?.price || 0;
-        const totalPrice = unitPrice * item.quantity;
+        const unitPrice = this.roundToTwoDecimals(item.price || product?.price || 0);
+        const totalPrice = this.roundToTwoDecimals(unitPrice * item.quantity);
 
         const orderItem = manager.create(OrderItem, {
           name: `${savedOrder.no}-item-${item.productNo}`,
@@ -276,7 +300,21 @@ export class OrderService {
       });
       await manager.save(Payment, payment);
 
-      this.logger.log(`订单创建完成: ${savedOrder.no}, 总金额: ${finalTotal}`);
+      this.logger.log(`订单创建完成: ${savedOrder.no}, 总金额: ${finalTotal.toFixed(2)}`);
+
+      // 9. 订单创建成功后，清空购物车中对应的商品
+      // 注意：这里在事务外执行，即使失败也不影响订单创建
+      try {
+        for (const item of data.items) {
+          if (item.productNo) {
+            await this.cartService.markAsPurchased(data.userNo, item.productNo);
+          }
+        }
+        this.logger.log(`购物车清理成功: 用户 ${data.userNo}, 商品数量 ${data.items.length}`);
+      } catch (error) {
+        // 购物车清理失败不影响订单创建，只记录日志
+        this.logger.warn(`购物车清理失败: ${error.message}`);
+      }
 
       return savedOrder;
     });
@@ -494,11 +532,11 @@ export class OrderService {
       const product = goods.spuId
         ? await this.productRepository.findOne({ where: { no: goods.spuId } })
         : null;
-      const unitPrice = this.parseNumber(product?.price ?? goods.price ?? 0);
+      const unitPrice = this.roundToTwoDecimals(this.parseNumber(product?.price ?? goods.price ?? 0));
       const quantity = Number(goods.quantity || 1);
-      const totalPrice = unitPrice * quantity;
+      const totalPrice = this.roundToTwoDecimals(unitPrice * quantity);
       
-      totalAmount += totalPrice;
+      totalAmount = this.roundToTwoDecimals(totalAmount + totalPrice);
       totalGoodsCount += quantity;
 
       const skuDetail = {
@@ -574,10 +612,10 @@ export class OrderService {
           : null;
         
         // Use price from DB if available, otherwise from request (fallback)
-        const unitPrice = this.parseNumber(product?.price ?? goods.price ?? 0);
+        const unitPrice = this.roundToTwoDecimals(this.parseNumber(product?.price ?? goods.price ?? 0));
         const quantity = Number(goods.quantity || 1);
-        const itemTotal = unitPrice * quantity;
-        calculatedTotal += itemTotal;
+        const itemTotal = this.roundToTwoDecimals(unitPrice * quantity);
+        calculatedTotal = this.roundToTwoDecimals(calculatedTotal + itemTotal);
 
         pendingItems.push({
           productNo: goods.spuId,
@@ -603,7 +641,7 @@ export class OrderService {
         receiverName: userAddressReq?.name,
         receiverPhone: userAddressReq?.phone || userAddressReq?.phoneNumber,
         shipAddress,
-        orderTotal: calculatedTotal,
+        orderTotal: this.roundToTwoDecimals(calculatedTotal),
         orderStatus: OrderStatus.UNPAY, // Default status
         createdAt: new Date(),
       });
@@ -617,9 +655,9 @@ export class OrderService {
           orderNo: orderNo,
           productNo: item.productNo,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.itemTotal,
-          finalPrice: item.itemTotal,
+          unitPrice: this.roundToTwoDecimals(item.unitPrice),
+          totalPrice: this.roundToTwoDecimals(item.itemTotal),
+          finalPrice: this.roundToTwoDecimals(item.itemTotal),
           name: item.name,
           productSnapshot: {
             image: item.image,
@@ -634,7 +672,7 @@ export class OrderService {
       const payment = this.paymentRepository.create({
         orderNo: orderNo,
         userNo: userNo || 'anonymous',
-        amount: calculatedTotal,
+        amount: this.roundToTwoDecimals(calculatedTotal),
         status: PaymentStatus.PENDING,
         method: PaymentMethod.WECHAT,
         transactionId: `TX-${Date.now()}`,
@@ -643,6 +681,22 @@ export class OrderService {
       await queryRunner.manager.save(Payment, payment);
 
       await queryRunner.commitTransaction();
+
+      // 订单创建成功后，清空购物车中对应的商品
+      if (userNo) {
+        try {
+          // 标记购物车中已下单的商品为已购买
+          for (const item of pendingItems) {
+            if (item.productNo) {
+              await this.cartService.markAsPurchased(userNo, item.productNo);
+            }
+          }
+          this.logger.log(`购物车清理成功: 用户 ${userNo}, 商品数量 ${pendingItems.length}`);
+        } catch (error) {
+          // 购物车清理失败不影响订单创建，只记录日志
+          this.logger.warn(`购物车清理失败: ${error.message}`);
+        }
+      }
 
       const totalAmountStr = this.toCentString(calculatedTotal);
 
@@ -927,5 +981,9 @@ export class OrderService {
   private toCentString(value: number) {
     const amount = Math.round(this.parseNumber(value) * 100);
     return `${amount}`;
+  }
+
+  private roundToTwoDecimals(value: number): number {
+    return Math.round(value * 100) / 100;
   }
 }

@@ -3,6 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Payment, PaymentStatus } from '../entity/payment';
 import { Order, OrderStatus } from '../entity/order';
+import {
+  PaymentFailedException,
+  PaymentAmountMismatchException,
+  DuplicatePaymentException,
+  OrderStatusException,
+} from '../common/exceptions';
 
 @Injectable()
 export class PaymentService {
@@ -87,15 +93,20 @@ export class PaymentService {
       }
 
       if (order.orderStatus !== OrderStatus.UNPAY) {
-        throw new BadRequestException(
-          `订单状态为 ${order.orderStatus}，无法支付`,
+        throw new OrderStatusException(
+          orderNo,
+          order.orderStatus,
+          OrderStatus.UNPAY,
+          '支付',
         );
       }
 
       // 2. 验证金额
       if (Math.abs(order.orderTotal - amount) > 0.01) {
-        throw new BadRequestException(
-          `支付金额不匹配，订单金额: ${order.orderTotal}, 支付金额: ${amount}`,
+        throw new PaymentAmountMismatchException(
+          orderNo,
+          order.orderTotal,
+          amount,
         );
       }
 
@@ -109,7 +120,10 @@ export class PaymentService {
 
       if (existingPayment) {
         this.logger.warn(`订单 ${orderNo} 已支付，返回已有支付记录`);
-        return existingPayment;
+        throw new DuplicatePaymentException(
+          orderNo,
+          existingPayment.transactionId,
+        );
       }
 
       // 4. 创建支付记录
@@ -162,7 +176,8 @@ export class PaymentService {
 
       // 2. 验证支付状态
       if (payment.status !== PaymentStatus.SUCCESS) {
-        throw new BadRequestException(
+        throw new PaymentFailedException(
+          payment.orderNo,
           `支付状态为 ${payment.status}，无法退款`,
         );
       }

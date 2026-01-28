@@ -163,9 +163,24 @@ export class CartService {
     );
   }
 
+  // 标记购物车商品为已购买
+  markAsPurchased(userNo: string, productNo: string) {
+    return this.cartRepository.update(
+      { userNo, productNo, status: CartItemStatus.ACTIVE },
+      { status: CartItemStatus.PURCHASED },
+    );
+  }
+
   clearCart(userNo: string) {
     return this.cartRepository.update(
       { userNo, status: CartItemStatus.ACTIVE },
+      { status: CartItemStatus.REMOVED },
+    );
+  }
+
+  clearSelectedCart(userNo: string) {
+    return this.cartRepository.update(
+      { userNo, status: CartItemStatus.ACTIVE, selected: true },
       { status: CartItemStatus.REMOVED },
     );
   }

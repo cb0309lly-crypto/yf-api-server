@@ -5,6 +5,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   // 创建HTTP应用
@@ -50,8 +51,11 @@ async function bootstrap() {
     }),
   );
 
-  // 全局异常过滤器
-  app.useGlobalFilters(new ValidationExceptionFilter());
+  // 全局异常过滤器（按顺序注册，先注册的先执行）
+  app.useGlobalFilters(
+    new AllExceptionsFilter(), // 捕获所有异常
+    new ValidationExceptionFilter(), // 捕获验证异常
+  );
 
   // 全局响应拦截器
   app.useGlobalInterceptors(new CommonResponseInterceptor());
