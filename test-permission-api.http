@@ -1,0 +1,144 @@
+# 权限体系 API 测试脚本
+# 使用 REST Client 或 Postman 执行
+
+### 变量定义
+@baseUrl = http://localhost:3000/api
+@token = YOUR_JWT_TOKEN_HERE
+
+### ==================== 角色管理 API ====================
+
+### 1. 获取角色列表
+GET {{baseUrl}}/systemManage/getRoleList?current=1&size=10
+Authorization: Bearer {{token}}
+
+### 2. 获取所有角色
+GET {{baseUrl}}/systemManage/getAllRoles
+Authorization: Bearer {{token}}
+
+### 3. 创建角色
+POST {{baseUrl}}/systemManage/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "code": "R_MANAGER",
+  "name": "经理",
+  "description": "部门经理权限",
+  "status": "1"
+}
+
+### 4. 更新角色
+PUT {{baseUrl}}/systemManage/role/ROLE_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "高级经理",
+  "description": "高级部门经理权限"
+}
+
+### 5. 删除角色
+DELETE {{baseUrl}}/systemManage/role/ROLE_ID_HERE
+Authorization: Bearer {{token}}
+
+### 6. 获取角色的菜单权限
+GET {{baseUrl}}/systemManage/role/ROLE_ID_HERE/menus
+Authorization: Bearer {{token}}
+
+### 7. 更新角色的菜单权限
+PUT {{baseUrl}}/systemManage/role/ROLE_ID_HERE/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "menuIds": ["menu_001", "menu_002", "menu_003"]
+}
+
+### 8. 获取角色下的用户
+GET {{baseUrl}}/systemManage/role/ROLE_ID_HERE/users
+Authorization: Bearer {{token}}
+
+### ==================== 菜单管理 API ====================
+
+### 9. 获取菜单列表
+GET {{baseUrl}}/systemManage/getMenuList
+Authorization: Bearer {{token}}
+
+### 10. 获取菜单树
+GET {{baseUrl}}/systemManage/getMenuTree
+Authorization: Bearer {{token}}
+
+### 11. 创建菜单
+POST {{baseUrl}}/systemManage/menu
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "商品管理",
+  "route": "product",
+  "icon": "icon-park-outline:commodity",
+  "order": 1,
+  "i18nKey": "route.product",
+  "buttons": "[{\"code\":\"product:add\",\"desc\":\"添加商品\"},{\"code\":\"product:edit\",\"desc\":\"编辑商品\"},{\"code\":\"product:delete\",\"desc\":\"删除商品\"}]",
+  "status": "1"
+}
+
+### 12. 更新菜单
+PUT {{baseUrl}}/systemManage/menu/MENU_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "商品管理（更新）",
+  "order": 2
+}
+
+### 13. 删除菜单
+DELETE {{baseUrl}}/systemManage/menu/MENU_ID_HERE
+Authorization: Bearer {{token}}
+
+### ==================== 用户角色管理 API ====================
+
+### 14. 获取用户列表
+GET {{baseUrl}}/systemManage/getUserList?current=1&size=10
+Authorization: Bearer {{token}}
+
+### 15. 更新用户角色
+PUT {{baseUrl}}/systemManage/user/USER_ID_HERE/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roleCodes": ["R_ADMIN", "R_USER"]
+}
+
+### ==================== 权限测试 ====================
+
+### 16. 测试无权限访问（应返回 403）
+# 使用普通用户 token 尝试删除角色
+DELETE {{baseUrl}}/systemManage/role/ROLE_ID_HERE
+Authorization: Bearer NORMAL_USER_TOKEN_HERE
+
+### 17. 测试系统角色保护（应返回 400）
+# 尝试删除系统预设角色
+DELETE {{baseUrl}}/systemManage/role/R_SUPER_ROLE_ID
+Authorization: Bearer {{token}}
+
+### 18. 测试关联检查（应返回 400）
+# 尝试删除有用户关联的角色
+DELETE {{baseUrl}}/systemManage/role/ROLE_WITH_USERS_ID
+Authorization: Bearer {{token}}
+
+### ==================== 获取用户权限信息 ====================
+
+### 19. 获取当前用户权限信息
+GET {{baseUrl}}/auth/user_info
+Authorization: Bearer {{token}}
+
+### 预期返回格式：
+# {
+#   "userId": "user_001",
+#   "userName": "admin",
+#   "roles": ["R_SUPER"],
+#   "buttons": ["product:add", "product:edit", "product:delete", ...]
+# }
