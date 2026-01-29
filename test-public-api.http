@@ -1,0 +1,142 @@
+### 测试后端接口改造 - 公开接口访问测试
+### 这些接口应该在未登录状态下可以访问
+
+@baseUrl = http://localhost:3000
+
+### ========== 商品模块测试 ==========
+
+### 1. 测试商品列表（无需登录）
+GET {{baseUrl}}/product/list?page=1&pageSize=10
+Content-Type: application/json
+
+### 2. 测试商品详情（无需登录）
+GET {{baseUrl}}/product/1
+Content-Type: application/json
+
+### 3. 测试热门搜索（无需登录）
+GET {{baseUrl}}/product/search/popular?limit=10
+Content-Type: application/json
+
+### 4. 测试搜索历史（无需登录）
+GET {{baseUrl}}/product/search/history
+Content-Type: application/json
+
+### ========== 分类模块测试 ==========
+
+### 5. 测试分类树（无需登录）
+GET {{baseUrl}}/category/tree/list
+Content-Type: application/json
+
+### 6. 测试分类详情（无需登录）
+GET {{baseUrl}}/category/1
+Content-Type: application/json
+
+### 7. 测试分类下的商品（无需登录）
+GET {{baseUrl}}/category/1/products?page=1&pageSize=10
+Content-Type: application/json
+
+### ========== 评价模块测试 ==========
+
+### 8. 测试评价列表（无需登录）
+GET {{baseUrl}}/review/list?page=1&pageSize=10
+Content-Type: application/json
+
+### 9. 测试商品评价（无需登录）
+GET {{baseUrl}}/review/product/1
+Content-Type: application/json
+
+### 10. 测试评价详情（无需登录）
+GET {{baseUrl}}/review/1
+Content-Type: application/json
+
+### ========== 促销模块测试 ==========
+
+### 11. 测试活跃促销列表（无需登录）
+GET {{baseUrl}}/promotion/active/list
+Content-Type: application/json
+
+### 12. 测试商品促销（无需登录）
+GET {{baseUrl}}/promotion/product/1
+Content-Type: application/json
+
+### 13. 测试促销详情（无需登录）
+GET {{baseUrl}}/promotion/1
+Content-Type: application/json
+
+### ========== 统计模块测试 ==========
+
+### 14. 测试小程序首页数据（无需登录）
+GET {{baseUrl}}/stats/mp-home
+Content-Type: application/json
+
+### 15. 测试小程序菜单配置（无需登录）
+GET {{baseUrl}}/stats/mp-tabbar
+Content-Type: application/json
+
+### ========== 需要鉴权的接口测试（应该返回401）==========
+
+### 16. 测试创建商品（应该返回401）
+POST {{baseUrl}}/product
+Content-Type: application/json
+
+{
+  "name": "测试商品",
+  "price": 100
+}
+
+### 17. 测试购物车（应该返回401）
+GET {{baseUrl}}/cart/user/123
+Content-Type: application/json
+
+### 18. 测试创建评价（应该返回401）
+POST {{baseUrl}}/review
+Content-Type: application/json
+
+{
+  "productId": "1",
+  "content": "测试评价",
+  "rating": 5
+}
+
+### 19. 测试创建促销（应该返回401）
+POST {{baseUrl}}/promotion
+Content-Type: application/json
+
+{
+  "name": "测试促销",
+  "discount": 0.8
+}
+
+### 20. 测试更新小程序首页数据（应该返回401）
+POST {{baseUrl}}/stats/mp-home
+Content-Type: application/json
+
+{
+  "swiper": [],
+  "activityImg": ""
+}
+
+### ========== 带Token的接口测试 ==========
+
+@token = YOUR_ACCESS_TOKEN_HERE
+
+### 21. 测试商品列表（带Token）
+GET {{baseUrl}}/product/list?page=1&pageSize=10
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 22. 测试购物车（带Token）
+GET {{baseUrl}}/cart/user/123
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 23. 测试创建评价（带Token）
+POST {{baseUrl}}/review
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": "1",
+  "content": "测试评价",
+  "rating": 5
+}
