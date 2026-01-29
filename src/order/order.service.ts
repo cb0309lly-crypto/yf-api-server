@@ -325,6 +325,80 @@ export class OrderService {
     return this.orderRepository.save(data);
   }
 
+  /**
+   * 删除订单
+   * 注意：这是物理删除，会同时删除关联的订单项、支付记录等
+   * 建议：生产环境应该使用软删除（添加 deletedAt 字段）
+   */
+  async deleteOrder(orderNo: string): Promise<void> {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. 查询订单
+      const order = await manager.findOne(Order, {
+        where: { no: orderNo },
+        relations: ['orderItems'],
+      });
+
+      if (!order) {
+        throw new BadRequestException('订单不存在');
+      }
+
+      // 2. 如果订单未取消且有商品，恢复库存
+      if (
+        order.orderStatus !== OrderStatus.CANCELED &&
+        order.orderItems &&
+        order.orderItems.length > 0
+      ) {
+        for (const item of order.orderItems) {
+          const result = await manager
+            .createQueryBuilder()
+            .update('yf_db_inventory')
+            .set({
+              quantity: () => `quantity + ${item.quantity}`,
+            })
+            .where('product_no = :productNo', { productNo: item.productNo })
+            .execute();
+
+          if (result.affected === 0) {
+            this.logger.warn(
+              `删除订单时库存恢复失败: 商品 ${item.productNo} 可能不存在库存记录`,
+            );
+          } else {
+            this.logger.log(
+              `删除订单时库存恢复成功: 商品 ${item.productNo}, 数量 ${item.quantity}`,
+            );
+          }
+        }
+      }
+
+      // 3. 删除关联的订单项
+      if (order.orderItems && order.orderItems.length > 0) {
+        await manager.delete(OrderItem, {
+          orderNo: orderNo,
+        });
+        this.logger.log(`删除订单项成功: 订单 ${orderNo}`);
+      }
+
+      // 4. 删除关联的支付记录
+      await manager.delete(Payment, {
+        orderNo: orderNo,
+      });
+      this.logger.log(`删除支付记录成功: 订单 ${orderNo}`);
+
+      // 5. 删除关联的物流记录
+      await manager.delete(Logistics, {
+        orderNo: orderNo,
+      });
+      this.logger.log(`删除物流记录成功: 订单 ${orderNo}`);
+
+      // 6. 最后删除订单
+      await manager.delete(Order, {
+        no: orderNo,
+      });
+
+      this.logger.log(`订单删除成功: ${orderNo}`);
+    });
+  }
+
   async findAll(): Promise<Order[]> {
     return this.orderRepository.find();
   }

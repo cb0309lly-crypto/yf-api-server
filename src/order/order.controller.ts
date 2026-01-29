@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -68,6 +69,12 @@ export class OrderController {
   @ApiOperation({ summary: '获取订单详情' })
   getOne(@Param() params: OrderIdDto): Promise<Order | null> {
     return this.orderService.findOne(params.id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除订单' })
+  deleteOrder(@Param() params: OrderIdDto): Promise<void> {
+    return this.orderService.deleteOrder(params.id);
   }
 
   @Get('mp/list')
